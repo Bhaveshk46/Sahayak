@@ -52,6 +52,29 @@ const formatSchemaFoundMessage = (fields: FormField[]): string => {
   return `Found ${parts.join(', ')} on this form.`;
 };
 
+const getFieldOptions = (field: FormField): Array<{ label: string; value: string }> => {
+  if (field.options && field.options.length > 0) return field.options;
+  const lower = `${field.id} ${field.name} ${field.label}`.toLowerCase();
+  if (lower.includes('scheme')) {
+    return [
+      { label: 'Post-Matric Merit Scholarship (2025)', value: 'merit' },
+      { label: 'National Higher Education Fellowship', value: 'national_fellowship' },
+      { label: 'State STEM Women Scholarship Scheme', value: 'stem_women' },
+      { label: 'Minority Student Excellence Grant', value: 'minority' },
+    ];
+  }
+  if (lower.includes('category')) {
+    return [
+      { label: 'General', value: 'GENERAL' },
+      { label: 'Other Backward Class (OBC)', value: 'OBC' },
+      { label: 'Scheduled Caste (SC)', value: 'SC' },
+      { label: 'Scheduled Tribe (ST)', value: 'ST' },
+      { label: 'Economically Weaker Section (EWS)', value: 'EWS' },
+    ];
+  }
+  return [];
+};
+
 export default function App() {
   // Navigation: 'form' (main review & fill) | 'documents' (manage documents & saved details) | 'settings'
   const [currentScreen, setCurrentScreen] = useState<'form' | 'documents' | 'settings'>('form');
@@ -979,42 +1002,69 @@ export default function App() {
                           </div>
 
                           <p className="text-slate-600 text-xs">
-                            I don't have this in your saved documents yet. Type it below:
+                            {getFieldOptions(item.field).length > 0
+                              ? 'Select an option from the dropdown below:'
+                              : "I don't have this in your saved documents yet. Type it below:"}
                           </p>
 
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="text"
-                              value={inlineAddValues[item.field.id] || ''}
-                              onChange={(e) =>
-                                setInlineAddValues((prev) => ({ ...prev, [item.field.id]: e.target.value }))
-                              }
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault();
+                          {getFieldOptions(item.field).length > 0 ? (
+                            <div className="space-y-1">
+                              <select
+                                value={inlineAddValues[item.field.id] || item.targetValue || ''}
+                                onChange={(e) => {
+                                  const chosenVal = e.target.value;
+                                  setInlineAddValues((prev) => ({ ...prev, [item.field.id]: chosenVal }));
+                                  handleSaveMissingDetail(
+                                    item.field,
+                                    item.profileKey || item.field.name,
+                                    chosenVal
+                                  );
+                                }}
+                                className="w-full px-3 py-2 rounded-lg border border-indigo-300 bg-white text-xs font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-2xs"
+                              >
+                                <option value="" disabled>-- Select an option from the dropdown --</option>
+                                {getFieldOptions(item.field).map((opt) => (
+                                  <option key={opt.value} value={opt.value}>
+                                    {opt.label || opt.value}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          ) : (
+                            <div className="flex items-center space-x-2">
+                              <input
+                                type="text"
+                                value={inlineAddValues[item.field.id] || ''}
+                                onChange={(e) =>
+                                  setInlineAddValues((prev) => ({ ...prev, [item.field.id]: e.target.value }))
+                                }
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleSaveMissingDetail(
+                                      item.field,
+                                      item.profileKey || item.field.name,
+                                      inlineAddValues[item.field.id] || ''
+                                    );
+                                  }
+                                }}
+                                placeholder="Type your answer and press Enter..."
+                                className="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800"
+                              />
+                              <button
+                                onClick={() =>
                                   handleSaveMissingDetail(
                                     item.field,
                                     item.profileKey || item.field.name,
                                     inlineAddValues[item.field.id] || ''
-                                  );
+                                  )
                                 }
-                              }}
-                              placeholder="Type your answer and press Enter..."
-                              className="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800"
-                            />
-                            <button
-                              onClick={() =>
-                                handleSaveMissingDetail(
-                                  item.field,
-                                  item.profileKey || item.field.name,
-                                  inlineAddValues[item.field.id] || ''
-                                )
-                              }
-                              className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition cursor-pointer shrink-0"
-                            >
-                              Save
-                            </button>
-                          </div>
+                                className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition cursor-pointer shrink-0"
+                              >
+                                Save
+                              </button>
+                            </div>
+                          )}
 
                           {justSavedFieldId === item.field.id && (
                             <div className="text-emerald-700 text-xs font-semibold flex items-center space-x-1">
@@ -1051,40 +1101,77 @@ export default function App() {
 
                           {editingFieldId === item.field.id ? (
                             <div className="flex items-center space-x-2">
-                              <input
-                                type="text"
-                                value={editValueInput}
-                                onChange={(e) => setEditValueInput(e.target.value)}
-                                className="flex-1 px-3 py-1.5 rounded-lg border border-indigo-400 bg-white text-xs outline-none"
-                              />
+                              {getFieldOptions(item.field).length > 0 ? (
+                                <select
+                                  value={editValueInput}
+                                  onChange={(e) => setEditValueInput(e.target.value)}
+                                  className="flex-1 px-3 py-1.5 rounded-lg border border-indigo-400 bg-white text-xs font-medium text-slate-800 outline-none cursor-pointer"
+                                >
+                                  {getFieldOptions(item.field).map((opt) => (
+                                    <option key={opt.value} value={opt.value}>
+                                      {opt.label || opt.value}
+                                    </option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <input
+                                  type="text"
+                                  value={editValueInput}
+                                  onChange={(e) => setEditValueInput(e.target.value)}
+                                  className="flex-1 px-3 py-1.5 rounded-lg border border-indigo-400 bg-white text-xs outline-none"
+                                />
+                              )}
                               <button
                                 onClick={() => handleSaveInlineEdit(item.field.id)}
-                                className="px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold"
+                                className="px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold cursor-pointer"
                               >
                                 Save
                               </button>
                               <button
                                 onClick={() => setEditingFieldId(null)}
-                                className="px-2 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs"
+                                className="px-2 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs cursor-pointer"
                               >
                                 Cancel
                               </button>
                             </div>
                           ) : (
                             <div className="flex items-center justify-between bg-white p-2 rounded-lg border border-amber-100">
-                              <span className="font-medium text-slate-900 truncate max-w-[200px]">
-                                {item.targetValue}
-                              </span>
-                              <div className="flex items-center space-x-1.5">
-                                <button
-                                  onClick={() => {
-                                    setEditingFieldId(item.field.id);
-                                    setEditValueInput(item.targetValue);
+                              {getFieldOptions(item.field).length > 0 ? (
+                                <select
+                                  value={item.targetValue}
+                                  onChange={(e) => {
+                                    const chosen = e.target.value;
+                                    handleSaveMissingDetail(
+                                      item.field,
+                                      item.profileKey || item.field.name,
+                                      chosen
+                                    );
                                   }}
-                                  className="text-xs text-indigo-600 hover:underline font-semibold"
+                                  className="flex-1 mr-2 px-2.5 py-1 text-xs font-semibold border border-amber-300 rounded-md bg-white text-slate-800 cursor-pointer outline-none focus:ring-2 focus:ring-indigo-500"
                                 >
-                                  Change
-                                </button>
+                                  {getFieldOptions(item.field).map((opt) => (
+                                    <option key={opt.value} value={opt.value}>
+                                      {opt.label || opt.value}
+                                    </option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <span className="font-medium text-slate-900 truncate max-w-[200px]">
+                                  {item.targetValue}
+                                </span>
+                              )}
+                              <div className="flex items-center space-x-1.5">
+                                {getFieldOptions(item.field).length === 0 && (
+                                  <button
+                                    onClick={() => {
+                                      setEditingFieldId(item.field.id);
+                                      setEditValueInput(item.targetValue);
+                                    }}
+                                    className="text-xs text-indigo-600 hover:underline font-semibold cursor-pointer"
+                                  >
+                                    Change
+                                  </button>
+                                )}
                                 <button
                                   onClick={() => handleFillSingle(item.field, item.targetValue)}
                                   className="px-2 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-md text-xs font-bold cursor-pointer"
@@ -1128,53 +1215,90 @@ export default function App() {
 
                             {editingFieldId === item.field.id ? (
                               <div className="flex items-center space-x-2 pt-1">
-                                <input
-                                  type="text"
-                                  value={editValueInput}
-                                  onChange={(e) => setEditValueInput(e.target.value)}
-                                  className="flex-1 px-3 py-1.5 rounded-lg border border-indigo-400 bg-white text-xs outline-none"
-                                />
+                                {getFieldOptions(item.field).length > 0 ? (
+                                  <select
+                                    value={editValueInput}
+                                    onChange={(e) => setEditValueInput(e.target.value)}
+                                    className="flex-1 px-3 py-1.5 rounded-lg border border-indigo-400 bg-white text-xs font-medium text-slate-800 outline-none cursor-pointer"
+                                  >
+                                    {getFieldOptions(item.field).map((opt) => (
+                                      <option key={opt.value} value={opt.value}>
+                                        {opt.label || opt.value}
+                                      </option>
+                                    ))}
+                                  </select>
+                                ) : (
+                                  <input
+                                    type="text"
+                                    value={editValueInput}
+                                    onChange={(e) => setEditValueInput(e.target.value)}
+                                    className="flex-1 px-3 py-1.5 rounded-lg border border-indigo-400 bg-white text-xs outline-none"
+                                  />
+                                )}
                                 <button
                                   onClick={() => handleSaveInlineEdit(item.field.id)}
-                                  className="px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold"
+                                  className="px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold cursor-pointer"
                                 >
                                   Save
                                 </button>
                                 <button
                                   onClick={() => setEditingFieldId(null)}
-                                  className="px-2 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs"
+                                  className="px-2 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs cursor-pointer"
                                 >
                                   Cancel
                                 </button>
                               </div>
                             ) : (
                               <div className="flex items-center justify-between pt-0.5">
-                                <div className="flex items-center space-x-1.5 font-medium text-slate-900 truncate max-w-[200px]">
-                                  <span>
-                                    {sensitive && !isRevealed ? maskValue(item.targetValue) : item.targetValue}
-                                  </span>
-                                  {sensitive && (
-                                    <button
-                                      onClick={() => toggleReveal(item.field.id)}
-                                      className="p-0.5 text-slate-400 hover:text-slate-600 cursor-pointer"
-                                      title={isRevealed ? 'Hide' : 'Show'}
-                                      aria-label={isRevealed ? 'Hide' : 'Show'}
-                                    >
-                                      {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                                    </button>
-                                  )}
-                                </div>
+                                {getFieldOptions(item.field).length > 0 ? (
+                                  <select
+                                    value={item.targetValue}
+                                    onChange={(e) => {
+                                      const chosen = e.target.value;
+                                      handleSaveMissingDetail(
+                                        item.field,
+                                        item.profileKey || item.field.name,
+                                        chosen
+                                      );
+                                    }}
+                                    className="flex-1 mr-2 px-2.5 py-1.5 text-xs font-semibold border border-indigo-200 rounded-lg bg-indigo-50/50 text-indigo-950 cursor-pointer outline-none hover:border-indigo-400 focus:ring-2 focus:ring-indigo-500 transition"
+                                  >
+                                    {getFieldOptions(item.field).map((opt) => (
+                                      <option key={opt.value} value={opt.value}>
+                                        {opt.label || opt.value}
+                                      </option>
+                                    ))}
+                                  </select>
+                                ) : (
+                                  <div className="flex items-center space-x-1.5 font-medium text-slate-900 truncate max-w-[200px]">
+                                    <span>
+                                      {sensitive && !isRevealed ? maskValue(item.targetValue) : item.targetValue}
+                                    </span>
+                                    {sensitive && (
+                                      <button
+                                        onClick={() => toggleReveal(item.field.id)}
+                                        className="p-0.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                                        title={isRevealed ? 'Hide' : 'Show'}
+                                        aria-label={isRevealed ? 'Hide' : 'Show'}
+                                      >
+                                        {isRevealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
 
                                 <div className="flex items-center space-x-1.5">
-                                  <button
-                                    onClick={() => {
-                                      setEditingFieldId(item.field.id);
-                                      setEditValueInput(item.targetValue);
-                                    }}
-                                    className="text-xs text-indigo-600 hover:underline font-semibold"
-                                  >
-                                    Change
-                                  </button>
+                                  {getFieldOptions(item.field).length === 0 && (
+                                    <button
+                                      onClick={() => {
+                                        setEditingFieldId(item.field.id);
+                                        setEditValueInput(item.targetValue);
+                                      }}
+                                      className="text-xs text-indigo-600 hover:underline font-semibold cursor-pointer"
+                                    >
+                                      Change
+                                    </button>
+                                  )}
                                   {isFilled ? (
                                     <button
                                       onClick={() => handleUndoSingle(item.field.id)}

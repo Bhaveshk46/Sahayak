@@ -52,6 +52,7 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
         aria-haspopup="listbox"
         aria-labelledby={`${id}-label`}
         data-formpilot-custom-dropdown="true"
+        data-options={JSON.stringify(options)}
         className="relative"
       >
         <button
@@ -65,12 +66,13 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
           <ChevronDown className="w-4 h-4 text-slate-400 shrink-0 ml-2" />
         </button>
 
-        {isOpen && (
-          <ul
-            role="listbox"
-            tabIndex={-1}
-            className="absolute z-30 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-60 overflow-auto py-1 text-xs"
-          >
+        <ul
+          role="listbox"
+          tabIndex={-1}
+          className={`absolute z-30 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-60 overflow-auto py-1 text-xs ${
+            isOpen ? 'block' : 'hidden'
+          }`}
+        >
             {options.map((option) => (
               <li
                 key={option.value}

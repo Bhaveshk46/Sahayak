@@ -353,12 +353,20 @@ function extractFieldsFromRoot(
 
     } else if (isCombobox) {
       type = 'custom-select';
-      const opts = el.querySelectorAll('[role="option"], [data-value]');
-      if (opts.length > 0) {
-        options = Array.from(opts).map(opt => ({
-          label: opt.textContent?.trim() || '',
-          value: opt.getAttribute('data-value') || opt.textContent?.trim() || '',
-        }));
+      const dataOpts = el.getAttribute('data-options');
+      if (dataOpts) {
+        try {
+          options = JSON.parse(dataOpts);
+        } catch {}
+      }
+      if (!options || options.length === 0) {
+        const opts = el.querySelectorAll('[role="option"], [data-value]');
+        if (opts.length > 0) {
+          options = Array.from(opts).map(opt => ({
+            label: opt.textContent?.trim() || '',
+            value: opt.getAttribute('data-value') || opt.textContent?.trim() || '',
+          }));
+        }
       }
 
     } else if (el.hasAttribute('data-formpilot-dropzone')) {
