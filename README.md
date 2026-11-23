@@ -149,10 +149,10 @@ You will see:
 
 | Time | Agent Step | User Action & Expected System Response |
 | :--- | :--- | :--- |
-| **0:00 - 0:45** | **Vault Unlock & Setup** | 1. Press `Ctrl+Shift+F` to open the FormPilot side panel.<br>2. Switch to **Profile** tab, enter a passphrase, and click **Unlock Vault**.<br>3. Upload sample test documents from `/test-documents/` (Aadhaar, Marksheet, PAN). Observe automatic document categorization and profile field extraction. |
-| **0:45 - 1:30** | **Observe & Decide** | 1. Navigate to `http://localhost:5173/` (Scholarship Form).<br>2. Side panel automatically scans the form across frames, showing `9 fields found`.<br>3. Switch to **Decide** tab: review local heuristic mappings (confidence badges, option formatting: `"OBC"` → `"Other Backward Class (OBC)"`).<br>4. Observe the **Pre-Fill Verification Checklist**: flags deliberate missing required field (`Guardian Occupation`) and date formatting rules. |
-| **1:30 - 2:15** | **Act & Quick-Attach** | 1. Click **Approve Plan & Fill Form**.<br>2. FormPilot fills all matching fields across frames with native property setters.<br>3. Beside the *Income Certificate* dropzone, click the floating **📎 Type to attach...** box.<br>4. Select a document: FormPilot detects the `200 KB` limit, re-encodes the image/PDF down to limit, and attaches it with a green checkmark (`✓ Compressed 800 KB -> 180 KB & Attached`).<br>5. Click **Undo** on any field to restore its previous value. |
-| **2:15 - 3:00** | **Recovery & Handback** | 1. In Date of Birth, type a malformed date `2002/05/14`. Observe FormPilot's Error Scanner detecting `INVALID_DATE` and auto-reformatting to `14-05-2002`.<br>2. Open the **⏱️ Agent Reasoning Timeline** from the top header to review the timestamped audit log (`OBSERVE`, `DECIDE`, `CHECK`, `ACT`, `RECOVERY`).<br>3. Notice the agent safely stopping at the mock CAPTCHA step without touching it (Rule 2 handback). |
+| **0:00 - 0:45** | **1. Add Documents & Vault Setup** | 1. Press `Ctrl+Shift+F` (or click extension icon) to open the FormPilot side panel.<br>2. Unlock the vault with any memorable password.<br>3. Click **Documents** in the header to view or add sample documents (Aadhaar, Marksheet, Income Certificate). Extracted details are securely stored on-device. |
+| **0:45 - 1:30** | **2. Open Form & Immediate Scan** | 1. Navigate to `http://localhost:5173/` (Scholarship Form).<br>2. FormPilot immediately detects the form without screen flicker, displaying exact breakdown: `Found 9 questions, 2 documents, 1 check on this form.`<br>3. Notice missing/ambiguous questions rendered with clean dropdown selectors (e.g. Scholarship Scheme, Category) directly inside the card—selecting an option saves it to your vault instantly. |
+| **1:30 - 2:15** | **3. Fill Form & Quick-Attach** | 1. Click the big primary button **"Fill this form for me"**.<br>2. FormPilot fills all matching inputs and custom comboboxes with native prototype setters, flashing green highlights.<br>3. Beside the *Income Certificate* dropzone, click the floating **📎 Type to attach...** box.<br>4. Select your certificate: FormPilot detects the `200 KB` limit, downsamples the PDF/image locally, and drops it with `✓ Compressed to 180 KB & Attached`.<br>5. Click **Undo all fills** or individual field **Undo** at any time to revert. |
+| **2:15 - 3:00** | **4. Check, Recover & Handback** | 1. Enter a mismatched date format or trigger validation: FormPilot detects error boundaries and offers single-click recovery.<br>2. FormPilot cleanly halts before CAPTCHAs, OTPs, and the final Submit button, handing complete legal control back to the user (Rule 2). |
 
 ---
 
@@ -167,19 +167,22 @@ You will see:
 
 ## 📊 Automated Test Results Suite
 
-FormPilot includes 16 test suites with **115 passing unit and integration tests** executed via Vitest in a headless DOM environment:
+FormPilot includes 19 test suites with **128 passing unit and integration tests** executed via Vitest in a headless DOM environment:
 
 | Test Suite File | Tests | Focus Area | Status |
 | :--- | :---: | :--- | :---: |
-| `src/checks/preFillChecklist.test.ts` | 11 | Name mismatch (initials, token reorder), DOB normalization, expiry checks, error-to-field mapping, single-retry limit | ✅ Passed |
+| `tests/noVoiceRegression.test.ts` | 5 | **Safety Net**: Zero runtime leaks, isolated module graph, no SW DOM/audio crashes | ✅ Passed |
+| `tests/generalityEvaluation.test.ts` | 5 | **Public Benchmarks**: Google Forms, KYC, Scholarships, Job portals, Differently worded forms | ✅ Passed |
+| `tests/manualDetailSaving.test.ts` | 3 | **Interactive Vault**: Direct in-panel dropdown select, instant detail persistence | ✅ Passed |
+| `src/checks/preFillChecklist.test.ts` | 11 | Name mismatch (initials, token reorder), DOB normalization, expiry checks, single-retry limit | ✅ Passed |
 | `src/compress/sizeParser.test.ts` | 5 | Text regex size limit parsing (KB/MB phrases, max limits) | ✅ Passed |
 | `src/compress/compressor.test.ts` | 11 | Canvas JPEG step-down, PNG-only protection, PDF multi-page rendering | ✅ Passed |
-| `src/decide/heuristicAccuracy.test.ts` | 5 | Multi-form heuristic accuracy on 4 benchmark forms (>= 90% correct) | ✅ Passed |
+| `src/decide/heuristicAccuracy.test.ts` | 5 | Multi-form heuristic accuracy on 4 benchmark forms (100% correct) | ✅ Passed |
 | `src/decide/geminiMatcher.test.ts` | 7 | LLM selective matcher fallback, confidence scoring, reason mapping | ✅ Passed |
 | `src/decide/privacy.test.ts` | 4 | **Rule 1 Privacy**: Zero profile values in outgoing LLM payloads | ✅ Passed |
 | `src/decide/valueFormatter.test.ts` | 14 | Date formatting, Indian phone normalization (+91), option matching | ✅ Passed |
 | `src/decide/formSignature.test.ts` | 4 | Form signature hashing, cache retrieval, and manual overrides | ✅ Passed |
-| `src/fillers/formFiller.test.ts` | 7 | Native setters, bubbling events, retry loops, undo records | ✅ Passed |
+| `src/fillers/formFiller.test.ts` | 7 | Native setters, bubbling events, retry loops, undo records, custom comboboxes | ✅ Passed |
 | `src/fillers/profileMapper.test.ts` | 5 | Profile key resolution, unconfirmed flags, candidate ranking | ✅ Passed |
 | `src/attach/quickAttach.test.ts` | 19 | Fuse.js document ranking, synthetic file attachment, wrong-doc check | ✅ Passed |
 | `src/scanner/formScanner.test.ts` | 3 | Label resolution, custom comboboxes, same-origin iframe recursion | ✅ Passed |
@@ -187,7 +190,7 @@ FormPilot includes 16 test suites with **115 passing unit and integration tests*
 | `src/ocr/sarvam.test.ts` | 9 | Job submission, polling status, entity extraction, regex fallback | ✅ Passed |
 | `src/extract/regex.test.ts` | 3 | Offline regex extraction for Aadhaar, PAN, and DOB | ✅ Passed |
 | `src/llm/llmValidation.test.ts` | 5 | Zod validation of LLM JSON outputs, single retry on bad JSON | ✅ Passed |
-| **Total** | **115** | **Full Regression & Safety Test Suite** | **100% Passed** |
+| **Total** | **128** | **Full Regression & Safety Test Suite** | **100% Passed** |
 
 ---
 
