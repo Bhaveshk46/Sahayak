@@ -191,6 +191,38 @@ FormPilot includes 16 test suites with **115 passing unit and integration tests*
 
 ---
 
+## 🩺 Troubleshooting & Diagnostics Guide
+
+If any feature appears inactive, verify each component in order using Chrome's Developer Tools:
+
+1. **Verify Background Service Worker is Active**:
+   - Go to `chrome://extensions/` and find FormPilot.
+   - Click `Inspect views: service worker` to open the background DevTools console.
+   - Look for: `[FormPilot Background] Service worker initialized.`
+   - Verify active message listener and multi-frame broadcast logs.
+
+2. **Verify Content Script Injection**:
+   - Open your form tab (e.g. `http://localhost:5173/`).
+   - Open the web page DevTools (`F12` or `Ctrl+Shift+I`) and look in the Console tab.
+   - Look for: `[FormPilot] Content script loaded (TOP)` or `[FormPilot] Content script loaded (IFRAME)`.
+   - If missing, reload the webpage. The content script automatically matches `<all_urls>` with `all_frames: true`.
+
+3. **Verify Form Field Scanner**:
+   - In the page console, observe scan count logs:
+     `[FormPilot] Scan #1 (TOP): 8 fields found (0 iframe) trigger=initial load`
+   - Every DOM mutation or iframe load re-scans automatically.
+
+4. **Verify Floating Quick-Attach Box**:
+   - In the page console, check for: `[FormPilot] QuickAttach manager mounted`.
+   - Floating `📎 Type to attach...` widgets automatically anchor next to every visible file input or dropzone slot.
+   - To toggle manually from the side panel, use the paperclip icon in the header.
+
+5. **Verify Side Panel**:
+   - Press `Ctrl+Shift+F` (or `Cmd+Shift+F` on macOS) or click the extension icon.
+   - Confirm active connection and observed field count in the top status bar.
+
+---
+
 ## 📦 Judge Packaging Script
 
 To package FormPilot for judges and review:

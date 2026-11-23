@@ -11,28 +11,39 @@ export default defineContentScript({
   runAt: 'document_idle',
   main() {
     const isIframe = window.self !== window.top;
-    console.log(`[FormPilot] content script loaded (${isIframe ? 'IFRAME' : 'TOP'})`, location.href);
+    console.info(`[FormPilot] Content script loaded (${isIframe ? 'IFRAME' : 'TOP'}) ${location.href}`);
 
     let cachedSchema: FormSchema | null = null;
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
     let scanCount = 0;
 
-    // Initialize M6 QuickAttachManager for upload slots
-    const quickAttachManager = new QuickAttachManager(document);
-    quickAttachManager.init();
+    // ── Feature 1: QuickAttach ──────────────────────────────────
+    let quickAttachManager: QuickAttachManager | null = null;
+    try {
+      quickAttachManager = new QuickAttachManager(document);
+      quickAttachManager.init();
+      console.info('[FormPilot] QuickAttach manager mounted');
+    } catch (err) {
+      console.warn('[FormPilot] QuickAttach init failed (non-fatal):', err);
+    }
 
-    // Initialize M8 RecoveryEngine for validation error handling
-    const recoveryEngine = new RecoveryEngine();
+    // ── Feature 2: Recovery Engine ──────────────────────────────
+    let recoveryEngine: RecoveryEngine | null = null;
+    try {
+      recoveryEngine = new RecoveryEngine();
+    } catch (err) {
+      console.warn('[FormPilot] RecoveryEngine init failed (non-fatal):', err);
+    }
 
+    // ── Helpers ─────────────────────────────────────────────────
     function attachIframeListeners() {
-      if (isIframe) return; // Only top frame manages iframe load listeners
+      if (isIframe) return;
       try {
         const iframes = document.querySelectorAll('iframe');
         iframes.forEach((iframe) => {
           if (!iframe.hasAttribute('data-fp-listener-attached')) {
             iframe.setAttribute('data-fp-listener-attached', 'true');
             iframe.addEventListener('load', () => {
-              console.log('[FormPilot] iframe load event detected, waiting for content to render...');
               setTimeout(() => {
                 runScanAndReport('iframe load event (parent re-scan)');
               }, 500);
@@ -53,8 +64,8 @@ export default defineContentScript({
         const iframeFieldCount = schema.fields.filter(f => f.isInsideIframe).length;
         console.info(
           `[FormPilot] Scan #${scanCount} (${isIframe ? 'IFRAME' : 'TOP'}): ` +
-          `${schema.fields.length} fields found (${iframeFieldCount} from iframes) ` +
-          `on ${location.href} (trigger: ${triggerReason})`
+          `${schema.fields.length} fields (${iframeFieldCount} iframe) ` +
+          `trigger=${triggerReason}`
         );
 
         if (!isIframe) {
@@ -81,29 +92,50 @@ export default defineContentScript({
       }
     }
 
-    // 1. Initial scan
-    const initialSchema = runScanAndReport('initial load');
-
-    // 2. React / SPA mount polling
-    const shouldPoll = isIframe || initialSchema.fields.length === 0;
-    if (shouldPoll) {
-      const pollDelays = [200, 500, 1000, 2000, 3000];
-      pollDelays.forEach((delay) => {
-        setTimeout(() => {
-          if (isIframe || !cachedSchema || cachedSchema.fields.length === 0) {
-            runScanAndReport(`SPA mount poll +${delay}ms`);
-          }
-        }, delay);
-      });
+    // ── Feature 3: Scanner ──────────────────────────────────────
+    let initialSchema: FormSchema;
+    try {
+      initialSchema = runScanAndReport('initial load');
+    } catch (err) {
+      console.error('[FormPilot] Initial scan failed (non-fatal):', err);
+      initialSchema = {
+        id: `schema_err_${Date.now()}`,
+        url: location.href,
+        title: document.title || 'Web Form',
+        fields: [],
+        hasCaptcha: false,
+        timestamp: Date.now()
+      };
     }
 
-    // 3. Notify background script
-    chrome.runtime.sendMessage({
-      type: 'CONTENT_SCRIPT_MOUNTED',
-      payload: { url: location.href, isIframe }
-    } as ExtensionMessage).catch(() => {});
+    // SPA mount polling
+    try {
+      const shouldPoll = isIframe || initialSchema.fields.length === 0;
+      if (shouldPoll) {
+        const pollDelays = [200, 500, 1000, 2000, 3000];
+        pollDelays.forEach((delay) => {
+          setTimeout(() => {
+            if (isIframe || !cachedSchema || cachedSchema.fields.length === 0) {
+              runScanAndReport(`SPA mount poll +${delay}ms`);
+            }
+          }, delay);
+        });
+      }
+    } catch (err) {
+      console.warn('[FormPilot] SPA poll setup failed (non-fatal):', err);
+    }
 
-    // 4. Runtime message listeners
+    // ── Feature 4: Background notification ──────────────────────
+    try {
+      chrome.runtime.sendMessage({
+        type: 'CONTENT_SCRIPT_MOUNTED',
+        payload: { url: location.href, isIframe }
+      } as ExtensionMessage).catch(() => {});
+    } catch {
+      // Extension context may not be available
+    }
+
+    // ── Feature 5: Message listeners ────────────────────────────
     chrome.runtime.onMessage.addListener((message: ExtensionMessage, _sender, sendResponse) => {
       if (message.type === 'TRIGGER_SCAN') {
         const schema = runScanAndReport('manual trigger from side panel');
@@ -123,7 +155,6 @@ export default defineContentScript({
         return true;
       }
 
-      // Handle targeted frame fill request or broadcast fill request
       if (message.type === 'FILL_FIELDS_IN_FRAME' || message.type === 'FILL_FIELDS') {
         (async () => {
           const results = [];
@@ -149,21 +180,25 @@ export default defineContentScript({
           }
 
           // M8 Error Scanner: scan for portal validation errors after fill
-          setTimeout(async () => {
-            const detectedErrors = scanPageValidationErrors(document, cachedSchema?.fields || []);
-            for (const error of detectedErrors) {
-              const res = await recoveryEngine.attemptAutoRecovery(error, {
-                doc: document,
-                fields: cachedSchema?.fields || [],
-                profileRecords: [],
-              });
-              if (res.recovered) {
-                console.log(`[FormPilot M8 Recovery] Fixed ${res.fieldId}: ${res.actionTaken}`);
-              } else if (res.needsYou) {
-                console.warn(`[FormPilot M8 Recovery] Field ${res.fieldId} requires user attention: "${res.exactPortalMessage}"`);
+          if (recoveryEngine) {
+            setTimeout(async () => {
+              try {
+                const detectedErrors = scanPageValidationErrors(document, cachedSchema?.fields || []);
+                for (const error of detectedErrors) {
+                  const res = await recoveryEngine!.attemptAutoRecovery(error, {
+                    doc: document,
+                    fields: cachedSchema?.fields || [],
+                    profileRecords: [],
+                  });
+                  if (res.recovered) {
+                    console.info(`[FormPilot] Recovery fixed ${res.fieldId}: ${res.actionTaken}`);
+                  }
+                }
+              } catch (err) {
+                console.warn('[FormPilot] Post-fill recovery scan failed (non-fatal):', err);
               }
-            }
-          }, 150);
+            }, 150);
+          }
 
           // Re-scan to reflect newly registered values
           setTimeout(() => {
@@ -192,7 +227,9 @@ export default defineContentScript({
       }
 
       if (message.type === 'TOGGLE_QUICK_ATTACH') {
-        quickAttachManager.setVisible(message.payload.visible);
+        if (quickAttachManager) {
+          quickAttachManager.setVisible(message.payload.visible);
+        }
         sendResponse({ success: true, visible: message.payload.visible });
         return false;
       }
@@ -200,23 +237,28 @@ export default defineContentScript({
       return false;
     });
 
-    // 5. MutationObserver
-    const observer = new MutationObserver(() => {
-      if (!isIframe) attachIframeListeners();
-      if (debounceTimer) clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => {
-        runScanAndReport('DOM mutation');
-      }, 250);
-    });
-
-    const targetNode = document.body || document.documentElement;
-    if (targetNode) {
-      observer.observe(targetNode, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['style', 'class', 'hidden', 'disabled', 'src']
+    // ── Feature 6: MutationObserver ─────────────────────────────
+    try {
+      const observer = new MutationObserver(() => {
+        if (!isIframe) attachIframeListeners();
+        if (debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          runScanAndReport('DOM mutation');
+        }, 250);
       });
+
+      const targetNode = document.body || document.documentElement;
+      if (targetNode) {
+        observer.observe(targetNode, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          attributeFilter: ['style', 'class', 'hidden', 'disabled', 'src']
+        });
+        console.info('[FormPilot] MutationObserver active');
+      }
+    } catch (err) {
+      console.warn('[FormPilot] MutationObserver init failed (non-fatal):', err);
     }
   }
 });
