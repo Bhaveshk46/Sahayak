@@ -87,7 +87,8 @@ export default function App() {
 
   // Form observation & fill state
   const [schema, setSchema] = useState<FormSchema | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [hasScannedOnce, setHasScannedOnce] = useState<boolean>(false);
   const [statusMessage, setStatusMessage] = useState<string>('Looking at your form...');
   const [activeTabInfo, setActiveTabInfo] = useState<{ id?: number; url?: string; title?: string }>({});
   const [profileRecords, setProfileRecords] = useState<ProfileRecord[]>([]);
@@ -142,17 +143,14 @@ export default function App() {
 
   const getActiveTab = useCallback(async (): Promise<chrome.tabs.Tab | undefined> => {
     try {
+      const activeTabs = await chrome.tabs.query({ active: true });
+      const webTab = activeTabs.find((t) => t.url && (t.url.startsWith('http://') || t.url.startsWith('https://') || t.url.startsWith('file://')));
+      if (webTab) return webTab;
       const [currentTab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (currentTab?.id && currentTab.url && !currentTab.url.startsWith('chrome://') && !currentTab.url.startsWith('chrome-extension://')) {
         return currentTab;
       }
-      const [lastFocused] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-      if (lastFocused?.id && lastFocused.url && !lastFocused.url.startsWith('chrome://') && !lastFocused.url.startsWith('chrome-extension://')) {
-        return lastFocused;
-      }
-      const allTabs = await chrome.tabs.query({});
-      const webTab = allTabs.find((t) => t.active && t.url && (t.url.startsWith('http://') || t.url.startsWith('https://') || t.url.startsWith('file://')));
-      return webTab || currentTab || lastFocused;
+      return activeTabs[0];
     } catch {
       return undefined;
     }
@@ -166,6 +164,7 @@ export default function App() {
     const tab = await getActiveTab();
     if (!tab?.id) {
       setLoading(false);
+      setHasScannedOnce(true);
       setStatusMessage("I can't find a form on this page. Open your application form and try again.");
       return;
     }
@@ -179,6 +178,8 @@ export default function App() {
         if (cachedResp?.payload && cachedResp.payload.fields?.length > 0) {
           setSchema(cachedResp.payload);
           setStatusMessage(formatSchemaFoundMessage(cachedResp.payload.fields));
+          setLoading(false);
+          setHasScannedOnce(true);
         }
       }
     );
@@ -186,28 +187,33 @@ export default function App() {
     chrome.runtime.sendMessage(
       { type: 'TRIGGER_SCAN_ALL_FRAMES', payload: { tabId: tab.id } } as ExtensionMessage,
       (resp) => {
-        setLoading(false);
-        if (chrome.runtime.lastError || !resp?.success) {
+        if (resp?.schema && resp.schema.fields && resp.schema.fields.length > 0) {
+          setSchema(resp.schema);
+          setStatusMessage(formatSchemaFoundMessage(resp.schema.fields));
+          setLoading(false);
+          setHasScannedOnce(true);
+        } else if (chrome.runtime.lastError || !resp?.success) {
+          // If TRIGGER_SCAN_ALL_FRAMES failed, try INJECT_AND_SCAN while loading remains true
           chrome.runtime.sendMessage(
             { type: 'INJECT_AND_SCAN', payload: { tabId: tab.id! } } as ExtensionMessage,
             (bgResp) => {
+              setLoading(false);
+              setHasScannedOnce(true);
               if (bgResp?.success && bgResp.schema && bgResp.schema.fields?.length > 0) {
                 setSchema(bgResp.schema);
                 setStatusMessage(formatSchemaFoundMessage(bgResp.schema.fields));
               } else {
-                setSchema(null);
+                setSchema((prev) => (prev && prev.fields.length > 0 ? prev : null));
                 setStatusMessage("I can't find a form on this page. Open your application form and try again.");
               }
             }
           );
         } else {
-          if (resp.schema && resp.schema.fields && resp.schema.fields.length > 0) {
-            setSchema(resp.schema);
-            setStatusMessage(formatSchemaFoundMessage(resp.schema.fields));
-          } else {
-            setSchema(null);
-            setStatusMessage("I can't find a form on this page. Open your application form and try again.");
-          }
+          // Response succeeded, but 0 fields detected
+          setLoading(false);
+          setHasScannedOnce(true);
+          setSchema(resp?.schema || null);
+          setStatusMessage("I can't find a form on this page. Open your application form and try again.");
         }
       }
     );
@@ -226,8 +232,12 @@ export default function App() {
 
     const messageListener = (message: ExtensionMessage) => {
       if (message.type === 'FORM_SCHEMA_OBSERVED') {
-        setSchema(message.payload);
-        setStatusMessage(formatSchemaFoundMessage(message.payload.fields));
+        if (message.payload && message.payload.fields?.length > 0) {
+          setSchema(message.payload);
+          setStatusMessage(formatSchemaFoundMessage(message.payload.fields));
+          setLoading(false);
+          setHasScannedOnce(true);
+        }
       }
     };
     chrome.runtime.onMessage.addListener(messageListener);
@@ -876,8 +886,8 @@ export default function App() {
 
           {/* MAIN SCROLLABLE CONTENT */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {/* Case A: Scanning/Loading state */}
-            {loading && (!schema || schema.fields.length === 0) && (
+            {/* Case A: Scanning/Loading state or awaiting initial scan */}
+            {(loading || !hasScannedOnce) && (!schema || schema.fields.length === 0) && (
               <div className="py-12 px-4 text-center space-y-4 max-w-xs mx-auto">
                 <div className="w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto">
                   <RefreshCw className="w-6 h-6 animate-spin" />
@@ -891,8 +901,8 @@ export default function App() {
               </div>
             )}
 
-            {/* Case B: Truly no form detected on page */}
-            {!loading && (!schema || schema.fields.length === 0) && (
+            {/* Case B: Truly no form detected on page after scan completed */}
+            {!loading && hasScannedOnce && (!schema || schema.fields.length === 0) && (
               <div className="py-12 px-4 text-center space-y-4 max-w-xs mx-auto">
                 <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
                   <HelpCircle className="w-6 h-6" />

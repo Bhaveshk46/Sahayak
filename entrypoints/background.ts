@@ -164,17 +164,39 @@ export default defineBackground(() => {
         return false;
       }
 
-      // Keep existing schema in memory during rescan to prevent UI flicker
+      // Check if we already have an aggregated schema in memory
+      const existingSchema = getAggregatedSchema(targetTabId);
+
       // Send TRIGGER_SCAN to all frames
       chrome.tabs.sendMessage(targetTabId, { type: 'TRIGGER_SCAN' } as ExtensionMessage, (topFrameResp) => {
-        // Wait a brief 150ms for iframe frames to report, then send aggregated result
+        if (chrome.runtime.lastError) {
+          // Content script not responding or not injected. Automatically inject and scan!
+          console.info(`[FormPilot Background] Tab ${targetTabId} content script not responding, auto-injecting...`);
+          chrome.scripting.executeScript({
+            target: { tabId: targetTabId, allFrames: true },
+            files: ['content-scripts/content.js']
+          }).then(() => {
+            setTimeout(() => {
+              chrome.tabs.sendMessage(targetTabId, { type: 'TRIGGER_SCAN' }, (injectedResp) => {
+                const aggregated = getAggregatedSchema(targetTabId) || (injectedResp?.schema ? injectedResp.schema : existingSchema);
+                sendResponse({ success: true, schema: aggregated });
+                if (aggregated) broadcastAggregatedSchema(targetTabId);
+              });
+            }, 80);
+          }).catch((err) => {
+            sendResponse({ success: Boolean(existingSchema), schema: existingSchema, error: String(err) });
+          });
+          return;
+        }
+
+        // Wait a brief 100ms for iframe frames to report, then send aggregated result
         setTimeout(() => {
-          const aggregated = getAggregatedSchema(targetTabId) || (topFrameResp?.schema ? topFrameResp.schema : null);
+          const aggregated = getAggregatedSchema(targetTabId) || (topFrameResp?.schema ? topFrameResp.schema : null) || existingSchema;
           sendResponse({ success: true, schema: aggregated });
           if (aggregated) {
             broadcastAggregatedSchema(targetTabId);
           }
-        }, 150);
+        }, 100);
       });
 
       return true; // async response
@@ -189,12 +211,19 @@ export default defineBackground(() => {
         return false;
       }
 
-      chrome.tabs.query({ active: true, lastFocusedWindow: true }).then(([activeTab]) => {
-        const id = targetTabId || activeTab?.id;
+      chrome.tabs.query({ active: true }).then((activeTabs) => {
+        const webTab = activeTabs.find((t) => t.id && tabFrameSchemas.has(t.id));
+        const id = targetTabId || webTab?.id || activeTabs[0]?.id;
         if (id && tabFrameSchemas.has(id)) {
           sendResponse({ success: true, payload: getAggregatedSchema(id) });
         } else {
-          sendResponse({ success: true, payload: null });
+          // If any tab has an active schema, provide it as quick-start
+          const allTabs = Array.from(tabFrameSchemas.keys());
+          if (allTabs.length === 1) {
+            sendResponse({ success: true, payload: getAggregatedSchema(allTabs[0]) });
+          } else {
+            sendResponse({ success: true, payload: null });
+          }
         }
       }).catch((err) => {
         sendResponse({ success: false, error: String(err) });
