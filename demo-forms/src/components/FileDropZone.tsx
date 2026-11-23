@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { UploadCloud, CheckCircle2, FileText } from 'lucide-react';
+import { UploadCloud, CheckCircle2 } from 'lucide-react';
 
 interface FileDropZoneProps {
   id: string;

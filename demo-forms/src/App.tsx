@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ScholarshipForm } from './forms/ScholarshipForm';
 import { JobApplicationForm } from './forms/JobApplicationForm';
 import { KycForm } from './forms/KycForm';

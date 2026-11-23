@@ -1,5 +1,4 @@
-import React from 'react';
-import { Sparkles, Shield, Feather, CheckCircle } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 export function SahayakLogoShowcase() {
   return (
