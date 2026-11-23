@@ -3,10 +3,11 @@ import { ScholarshipForm } from './forms/ScholarshipForm';
 import { JobApplicationForm } from './forms/JobApplicationForm';
 import { KycForm } from './forms/KycForm';
 import { IframeEmbeddedForm } from './forms/IframeEmbeddedForm';
-import { Shield, GraduationCap, Briefcase, FileCheck } from 'lucide-react';
+import { SahayakLogoShowcase } from './components/SahayakLogoShowcase';
+import { Shield, GraduationCap, Briefcase, FileCheck, Sparkles } from 'lucide-react';
 
 export default function App() {
-  const [activeForm, setActiveForm] = useState<'scholarship' | 'job' | 'kyc'>('scholarship');
+  const [activeForm, setActiveForm] = useState<'scholarship' | 'job' | 'kyc' | 'logos'>('scholarship');
   const [isIframeView, setIsIframeView] = useState(false);
 
   useEffect(() => {
@@ -90,6 +91,18 @@ export default function App() {
                 <FileCheck className="w-3.5 h-3.5" />
                 <span>KYC + Iframe</span>
               </button>
+
+              <button
+                onClick={() => setActiveForm('logos')}
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold flex items-center space-x-1.5 transition cursor-pointer ${
+                  activeForm === 'logos'
+                    ? 'bg-amber-500 text-slate-950 shadow-xs'
+                    : 'text-amber-400 hover:text-amber-300'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>✨ Sahayak Logos</span>
+              </button>
             </div>
           </div>
         </div>
@@ -100,6 +113,7 @@ export default function App() {
         {activeForm === 'scholarship' && <ScholarshipForm />}
         {activeForm === 'job' && <JobApplicationForm />}
         {activeForm === 'kyc' && <KycForm />}
+        {activeForm === 'logos' && <SahayakLogoShowcase />}
       </main>
 
       {/* Footer */}
