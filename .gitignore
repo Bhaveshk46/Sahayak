@@ -1,0 +1,22 @@
+# Environment and local API keys
+.env
+.env.*
+*.env
+*.local
+
+# Node dependencies
+node_modules/
+
+# Extension and app builds
+.output/
+.wxt/
+dist/
+build/
+*.zip
+
+# Operating system and editor artifacts
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/

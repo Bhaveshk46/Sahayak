@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Portal Citizen Registration</title>
+</head>
+<body>
+  <div class="container">
+    <h2>Citizen Account Registration</h2>
+    <form id="registration-form">
+      <!-- Bootstrap 5 floating label pattern -->
+      <div class="form-floating mb-3">
+        <input type="text" class="form-control" id="floatingFullName" placeholder="Enter full name" required />
+        <label for="floatingFullName">Candidate Full Legal Name *</label>
+      </div>
+
+      <div class="form-floating mb-3">
+        <input type="email" class="form-control" id="floatingEmail" placeholder="name@example.com" required />
+        <label for="floatingEmail">Email Address (for official communication) *</label>
+      </div>
+
+      <div class="form-floating mb-3">
+        <input type="tel" class="form-control" id="floatingMobile" placeholder="9876543210" required />
+        <label for="floatingMobile">Primary Mobile Number *</label>
+      </div>
+
+      <div class="form-floating mb-3">
+        <input type="date" class="form-control" id="floatingDOB" required />
+        <label for="floatingDOB">Birth Date (DOB) *</label>
+      </div>
+
+      <!-- Social Category Select -->
+      <div class="mb-3">
+        <label for="casteCategorySelect" class="form-label">Reservation / Social Category</label>
+        <select class="form-select" id="casteCategorySelect" name="caste_category">
+          <option value="GEN">General Category</option>
+          <option value="OBC">Other Backward Classes (OBC)</option>
+          <option value="SC">Scheduled Castes (SC)</option>
+          <option value="ST">Scheduled Tribes (ST)</option>
+          <option value="EWS">Economically Weaker Section (EWS)</option>
+        </select>
+      </div>
+
+      <!-- Password -->
+      <div class="form-floating mb-3">
+        <input type="password" class="form-control" id="floatingPassword" placeholder="Password" required />
+        <label for="floatingPassword">Create Portal Password *</label>
+      </div>
+
+      <!-- Terms Checkbox -->
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" id="termsAgreement" required />
+        <label class="form-check-label" for="termsAgreement">
+          I declare that all personal information provided is true and verified. *
+        </label>
+      </div>
+
+      <button type="submit" class="btn btn-primary">Create Account</button>
+    </form>
+  </div>
+</body>
+</html>

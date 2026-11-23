@@ -1,0 +1,192 @@
+{
+  "id": "schema_1795448121252",
+  "url": "http://localhost:3000/",
+  "title": "Web Form",
+  "fields": [
+    {
+      "id": "student_name",
+      "name": "full_name",
+      "type": "text",
+      "label": "Full Legal Name *",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "placeholder": "e.g. Aditi Sharma",
+      "required": true,
+      "hint": "Max size 200 KB, PDF only",
+      "selector": "#student_name",
+      "currentValue": "",
+      "isInsideIframe": false
+    },
+    {
+      "id": "student_email",
+      "name": "email",
+      "type": "email",
+      "label": "Email Address *",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "placeholder": "aditi.sharma@example.com",
+      "required": true,
+      "hint": "Mobile Number (Linked with Aadhaar) *",
+      "selector": "#student_email",
+      "currentValue": "",
+      "isInsideIframe": false
+    },
+    {
+      "id": "student_phone",
+      "name": "phone_number",
+      "type": "tel",
+      "label": "Mobile Number (Linked with Aadhaar) *",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "placeholder": "9876543210",
+      "required": true,
+      "hint": "Max size 200 KB, PDF only",
+      "selector": "#student_phone",
+      "currentValue": "",
+      "isInsideIframe": false
+    },
+    {
+      "id": "student_dob",
+      "name": "date_of_birth",
+      "type": "date",
+      "label": "Date of Birth *",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "required": true,
+      "hint": "Max size 200 KB, PDF only",
+      "selector": "#student_dob",
+      "currentValue": "",
+      "isInsideIframe": false
+    },
+    {
+      "id": "social_category",
+      "name": "social_category",
+      "type": "select",
+      "label": "Social Category *",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "required": true,
+      "options": [
+        {
+          "label": "General",
+          "value": "GENERAL"
+        },
+        {
+          "label": "Other Backward Class (OBC)",
+          "value": "OBC"
+        },
+        {
+          "label": "Scheduled Caste (SC)",
+          "value": "SC"
+        },
+        {
+          "label": "Scheduled Tribe (ST)",
+          "value": "ST"
+        }
+      ],
+      "hint": "Max size 200 KB, PDF only",
+      "selector": "#social_category",
+      "currentValue": "GENERAL",
+      "isInsideIframe": false
+    },
+    {
+      "id": "college_name",
+      "name": "institution_name",
+      "type": "text",
+      "label": "Institution / University Name *",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "required": true,
+      "hint": "Max size 200 KB, PDF only",
+      "selector": "#college_name",
+      "currentValue": "",
+      "isInsideIframe": false
+    },
+    {
+      "id": "scholarship_scheme_select",
+      "name": "scholarship_scheme_select",
+      "type": "custom-select",
+      "label": "Applied Scholarship Scheme *",
+      "labelSource": "aria-labelledby",
+      "labelConfidence": 0.95,
+      "required": true,
+      "options": [
+        {
+          "label": "Post-Matric Merit Scholarship (2025)",
+          "value": "merit"
+        },
+        {
+          "label": "National Higher Education Fellowship",
+          "value": "national_fellowship"
+        },
+        {
+          "label": "State STEM Women Scholarship Scheme",
+          "value": "stem_women"
+        }
+      ],
+      "hint": "Max size 200 KB, PDF only",
+      "selector": "#scholarship_scheme_select",
+      "currentValue": "",
+      "isInsideIframe": false
+    },
+    {
+      "id": "annual_family_income",
+      "name": "annual_income",
+      "type": "number",
+      "label": "Annual Family Gross Income (in INR) *",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "required": true,
+      "hint": "Competent Authority Income Certificate *\n            Max size 200 KB, PDF only",
+      "min": "0",
+      "selector": "#annual_family_income",
+      "currentValue": "",
+      "isInsideIframe": false
+    },
+    {
+      "id": "income_certificate_file",
+      "name": "income_certificate",
+      "type": "file",
+      "label": "Competent Authority Income Certificate *",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "required": true,
+      "hint": "Max size 200 KB, PDF only",
+      "accept": ".pdf",
+      "maxSizeBytes": 204800,
+      "selector": "#income_certificate_file",
+      "currentValue": "",
+      "isInsideIframe": false
+    },
+    {
+      "id": "marksheet_file",
+      "name": "previous_marksheet",
+      "type": "file",
+      "label": "Previous Qualifying Exam Marksheet *",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "required": true,
+      "hint": "Max size 500 KB, PDF or JPG",
+      "accept": ".pdf,.jpg,.jpeg",
+      "maxSizeBytes": 512000,
+      "selector": "#marksheet_file",
+      "currentValue": "",
+      "isInsideIframe": false
+    },
+    {
+      "id": "captcha_verified",
+      "name": "captcha_verified",
+      "type": "checkbox",
+      "label": "I'm not a robot",
+      "labelSource": "wrapping-label",
+      "labelConfidence": 0.95,
+      "required": false,
+      "hint": "Max size 200 KB, PDF only",
+      "selector": "#captcha_verified",
+      "currentValue": "on",
+      "isInsideIframe": false
+    }
+  ],
+  "hasCaptcha": true,
+  "timestamp": 1795448121252
+}

@@ -1,0 +1,213 @@
+{
+  "id": "schema_1795448121270",
+  "url": "http://localhost:3000/",
+  "title": "Web Form",
+  "fields": [
+    {
+      "id": "radiogroup_notice_period",
+      "name": "notice_period",
+      "type": "radio",
+      "label": "Notice Period Duration *",
+      "labelSource": "nearby-text",
+      "labelConfidence": 0.65,
+      "required": false,
+      "options": [
+        {
+          "label": "Immediate",
+          "value": "immediate"
+        },
+        {
+          "label": "15 Days",
+          "value": "15_days"
+        },
+        {
+          "label": "30 Days",
+          "value": "30_days"
+        },
+        {
+          "label": "60+ Days",
+          "value": "60_days"
+        }
+      ],
+      "selector": "input[name=\"notice_period\"]",
+      "currentValue": "30_days",
+      "isInsideIframe": false
+    },
+    {
+      "id": "applicant_name",
+      "name": "candidate_name",
+      "type": "text",
+      "label": "Candidate Full Name *",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "placeholder": "Rahul Verma",
+      "required": true,
+      "hint": "Max size 500 KB, PDF only",
+      "selector": "#applicant_name",
+      "currentValue": "",
+      "isInsideIframe": false
+    },
+    {
+      "id": "applicant_email",
+      "name": "applicant_email",
+      "type": "email",
+      "label": "Primary Contact Email *",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "required": true,
+      "hint": "Phone Number *",
+      "selector": "#applicant_email",
+      "currentValue": "",
+      "isInsideIframe": false
+    },
+    {
+      "id": "applicant_phone",
+      "name": "applicant_phone",
+      "type": "tel",
+      "label": "Phone Number *",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "required": true,
+      "hint": "Max size 500 KB, PDF only",
+      "selector": "#applicant_phone",
+      "currentValue": "",
+      "isInsideIframe": false
+    },
+    {
+      "id": "total_experience",
+      "name": "experience_years",
+      "type": "number",
+      "label": "Total Relevant Experience (Years) *",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "required": true,
+      "hint": "Max size 500 KB, PDF only",
+      "min": "0",
+      "max": "40",
+      "selector": "#total_experience",
+      "currentValue": "",
+      "isInsideIframe": false
+    },
+    {
+      "id": "highest_qualification",
+      "name": "highest_qualification",
+      "type": "select",
+      "label": "Highest Educational Degree *",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "required": true,
+      "options": [
+        {
+          "label": "B.Tech / B.E.",
+          "value": "B.Tech"
+        },
+        {
+          "label": "M.Tech / M.E.",
+          "value": "M.Tech"
+        },
+        {
+          "label": "MCA",
+          "value": "MCA"
+        }
+      ],
+      "hint": "Max size 500 KB, PDF only",
+      "selector": "#highest_qualification",
+      "currentValue": "B.Tech",
+      "isInsideIframe": false
+    },
+    {
+      "id": "current_employer",
+      "name": "current_company",
+      "type": "text",
+      "label": "Current Employer / Organization",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "required": false,
+      "hint": "Max size 500 KB, PDF only",
+      "selector": "#current_employer",
+      "currentValue": "",
+      "isInsideIframe": false
+    },
+    {
+      "id": "work_location_select",
+      "name": "work_location_select",
+      "type": "custom-select",
+      "label": "Preferred Work Location *",
+      "labelSource": "aria-labelledby",
+      "labelConfidence": 0.95,
+      "required": true,
+      "options": [
+        {
+          "label": "Bengaluru",
+          "value": "Bengaluru"
+        },
+        {
+          "label": "Hyderabad",
+          "value": "Hyderabad"
+        }
+      ],
+      "hint": "Max size 500 KB, PDF only",
+      "selector": "#work_location_select",
+      "currentValue": "",
+      "isInsideIframe": false
+    },
+    {
+      "id": "resume_file_input",
+      "name": "curriculum_vitae",
+      "type": "file",
+      "label": "Updated Comprehensive Resume (CV) *",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "required": true,
+      "hint": "Max size 500 KB, PDF only",
+      "accept": ".pdf",
+      "maxSizeBytes": 512000,
+      "selector": "#resume_file_input",
+      "currentValue": "",
+      "isInsideIframe": false
+    },
+    {
+      "id": "passport_photo_input",
+      "name": "passport_photo",
+      "type": "file",
+      "label": "Recent Passport Size Photograph *",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "required": true,
+      "hint": "Max size 100 KB, JPG or PNG only",
+      "accept": ".jpg,.jpeg,.png",
+      "maxSizeBytes": 102400,
+      "selector": "#passport_photo_input",
+      "currentValue": "",
+      "isInsideIframe": false
+    },
+    {
+      "id": "applicant_declaration",
+      "name": "applicant_declaration",
+      "type": "checkbox",
+      "label": "I hereby declare that all details furnished above are accurate",
+      "labelSource": "wrapping-label",
+      "labelConfidence": 0.95,
+      "required": true,
+      "hint": "Max size 500 KB, PDF only",
+      "selector": "#applicant_declaration",
+      "currentValue": "on",
+      "isInsideIframe": false
+    },
+    {
+      "id": "captcha_box",
+      "name": "captcha_box",
+      "type": "checkbox",
+      "label": "I hereby declare that all details furnished above are accurate",
+      "labelSource": "nearby-text",
+      "labelConfidence": 0.75,
+      "required": false,
+      "hint": "Max size 500 KB, PDF only",
+      "selector": "#captcha_box",
+      "currentValue": "on",
+      "isInsideIframe": false
+    }
+  ],
+  "hasCaptcha": true,
+  "timestamp": 1795448121270
+}

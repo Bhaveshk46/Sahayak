@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Job Application - Senior Software Engineer</title>
+</head>
+<body>
+  <div class="application-container">
+    <h1>Application for Senior Software Engineer</h1>
+    <form id="job-app-form">
+      <!-- Compound Name Fields -->
+      <div class="field-row">
+        <div class="field-group">
+          <label for="first_name">First Name <span class="required">*</span></label>
+          <input type="text" id="first_name" name="first_name" required placeholder="Jane" />
+        </div>
+        <div class="field-group">
+          <label for="last_name">Last Name <span class="required">*</span></label>
+          <input type="text" id="last_name" name="last_name" required placeholder="Doe" />
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div class="field-group">
+        <label for="applicant_email">Email Address <span class="required">*</span></label>
+        <input type="email" id="applicant_email" name="email" required placeholder="jane.doe@example.com" />
+      </div>
+
+      <!-- Phone -->
+      <div class="field-group">
+        <label for="phone_number">Phone Number <span class="required">*</span></label>
+        <input type="tel" id="phone_number" name="phone" required placeholder="+91 9876543210" />
+      </div>
+
+      <!-- University / Current Org -->
+      <div class="field-group">
+        <label for="institution_name">Current Employer or University Name</label>
+        <input type="text" id="institution_name" name="company_or_school" placeholder="Tech Corp or State University" />
+      </div>
+
+      <!-- Resume Upload Dropzone -->
+      <div class="field-group upload-zone" data-formpilot-dropzone-wrapper="true">
+        <label for="resume_attachment">Resume / Curriculum Vitae (CV) <span class="required">*</span></label>
+        <span class="hint">Attach PDF or DOCX file (Maximum size: 2 MB)</span>
+        <div class="drop-target" data-formpilot-dropzone="true">
+          <input type="file" id="resume_attachment" name="resume" accept=".pdf,.doc,.docx" required />
+        </div>
+      </div>
+
+      <!-- Cover Letter / Notes -->
+      <div class="field-group">
+        <label for="cover_letter_text">Cover Letter or Additional Notes</label>
+        <textarea id="cover_letter_text" name="notes" rows="4" placeholder="Briefly describe why you are a great fit..."></textarea>
+      </div>
+
+      <button type="submit">Submit Application</button>
+    </form>
+  </div>
+</body>
+</html>

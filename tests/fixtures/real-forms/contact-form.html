@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Public Grievance and Contact Form</title>
+</head>
+<body>
+  <div class="contact-card">
+    <h2>Public Grievance & Inquiries Portal</h2>
+    <form id="grievance-contact-form">
+      <div class="row">
+        <!-- Field with wrapping label -->
+        <label class="block-label">
+          <span>Applicant Name *</span>
+          <input type="text" name="citizen_name" required placeholder="Enter full name" />
+        </label>
+      </div>
+
+      <div class="row">
+        <!-- Field with preceding heading / nearby text -->
+        <div class="form-group">
+          <p class="field-title">Official Email ID *</p>
+          <input type="email" name="contact_email" required placeholder="user@domain.com" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="form-group">
+          <p class="field-title">Phone / Contact Number *</p>
+          <input type="tel" name="phone_no" required placeholder="10-digit number" />
+        </div>
+      </div>
+
+      <div class="row">
+        <fieldset class="category-fieldset">
+          <legend>Grievance / Subject Category *</legend>
+          <label><input type="radio" name="query_category" value="scholarship" required /> Scholarship Disbursement</label>
+          <label><input type="radio" name="query_category" value="document" /> Document Verification</label>
+          <label><input type="radio" name="query_category" value="technical" /> Portal Technical Issue</label>
+        </fieldset>
+      </div>
+
+      <div class="row">
+        <label for="grievance_details">Description of Issue / Grievance *</label>
+        <textarea id="grievance_details" name="grievance_text" rows="5" required placeholder="Please explain your grievance in detail..."></textarea>
+      </div>
+
+      <div class="row file-row">
+        <label for="proof_doc">Supporting Document or Screenshot (Optional)</label>
+        <small class="help-text">Max size 500 KB, allowed formats: PDF, JPG, PNG</small>
+        <input type="file" id="proof_doc" name="supporting_file" accept=".pdf,.jpg,.jpeg,.png" />
+      </div>
+
+      <button type="submit">Submit Grievance</button>
+    </form>
+  </div>
+</body>
+</html>

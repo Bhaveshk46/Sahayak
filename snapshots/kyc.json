@@ -1,0 +1,265 @@
+{
+  "id": "schema_1795448121292",
+  "url": "http://localhost:3000/",
+  "title": "Web Form",
+  "fields": [
+    {
+      "id": "legal_name",
+      "name": "full_legal_name",
+      "type": "text",
+      "label": "Full Legal Name (as on PAN/Aadhaar) *",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "required": true,
+      "hint": "Permanent Account Number (PAN) *",
+      "selector": "#legal_name",
+      "currentValue": "",
+      "isInsideIframe": false
+    },
+    {
+      "id": "pan_number",
+      "name": "pan_card_number",
+      "type": "text",
+      "label": "Permanent Account Number (PAN) *",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "required": true,
+      "hint": "12-digit Aadhaar Number *",
+      "maxLength": 10,
+      "selector": "#pan_number",
+      "currentValue": "",
+      "isInsideIframe": false
+    },
+    {
+      "id": "aadhaar_number",
+      "name": "aadhaar_number",
+      "type": "text",
+      "label": "12-digit Aadhaar Number *",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "required": true,
+      "hint": "Max size 300 KB, PDF only",
+      "maxLength": 12,
+      "selector": "#aadhaar_number",
+      "currentValue": "",
+      "isInsideIframe": false
+    },
+    {
+      "id": "father_name",
+      "name": "father_name",
+      "type": "text",
+      "label": "Father's / Spouse's Full Name *",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "required": true,
+      "hint": "Max size 300 KB, PDF only",
+      "selector": "#father_name",
+      "currentValue": "",
+      "isInsideIframe": false
+    },
+    {
+      "id": "dob_field",
+      "name": "date_of_birth",
+      "type": "date",
+      "label": "Date of Birth *",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "required": true,
+      "hint": "Max size 300 KB, PDF only",
+      "selector": "#dob_field",
+      "currentValue": "",
+      "isInsideIframe": false
+    },
+    {
+      "id": "kyc_gender",
+      "name": "gender",
+      "type": "select",
+      "label": "Gender *",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "required": true,
+      "options": [
+        {
+          "label": "Male",
+          "value": "male"
+        },
+        {
+          "label": "Female",
+          "value": "female"
+        }
+      ],
+      "hint": "Max size 300 KB, PDF only",
+      "selector": "#kyc_gender",
+      "currentValue": "male",
+      "isInsideIframe": false
+    },
+    {
+      "id": "state_domicile_select",
+      "name": "state_domicile_select",
+      "type": "custom-select",
+      "label": "State / Union Territory of Residence *",
+      "labelSource": "aria-labelledby",
+      "labelConfidence": 0.95,
+      "required": true,
+      "options": [
+        {
+          "label": "Maharashtra",
+          "value": "Maharashtra"
+        },
+        {
+          "label": "Delhi",
+          "value": "Delhi"
+        }
+      ],
+      "hint": "Max size 300 KB, PDF only",
+      "selector": "#state_domicile_select",
+      "currentValue": "",
+      "isInsideIframe": false
+    },
+    {
+      "id": "permanent_address",
+      "name": "residential_address",
+      "type": "textarea",
+      "label": "Permanent Address Line *",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "required": true,
+      "hint": "Aadhaar Card (Masked e-Aadhaar) *\n            Max size 300 KB, PDF only",
+      "selector": "#permanent_address",
+      "currentValue": "",
+      "isInsideIframe": false
+    },
+    {
+      "id": "aadhaar_doc_upload",
+      "name": "aadhaar_document",
+      "type": "file",
+      "label": "Aadhaar Card (Masked e-Aadhaar) *",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "required": true,
+      "hint": "Max size 300 KB, PDF only",
+      "accept": ".pdf",
+      "maxSizeBytes": 307200,
+      "selector": "#aadhaar_doc_upload",
+      "currentValue": "",
+      "isInsideIframe": false
+    },
+    {
+      "id": "pan_doc_upload",
+      "name": "pan_card_document",
+      "type": "file",
+      "label": "PAN Card Clear Scan *",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "required": true,
+      "hint": "Max size 200 KB, JPG or PDF",
+      "accept": ".pdf,.jpg,.jpeg",
+      "maxSizeBytes": 204800,
+      "selector": "#pan_doc_upload",
+      "currentValue": "",
+      "isInsideIframe": false
+    },
+    {
+      "id": "kyc_captcha",
+      "name": "kyc_captcha",
+      "type": "checkbox",
+      "label": "PAN Card Clear Scan *\n            Max size 200 KB, JPG or PDF",
+      "labelSource": "nearby-text",
+      "labelConfidence": 0.75,
+      "required": true,
+      "hint": "Max size 300 KB, PDF only",
+      "selector": "#kyc_captcha",
+      "currentValue": "on",
+      "isInsideIframe": false
+    },
+    {
+      "id": "kyc_bank_iframe::bank_account_holder",
+      "name": "bank_beneficiary_name",
+      "type": "text",
+      "label": "Bank Account Beneficiary Name *",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "required": true,
+      "hint": "Bank Account Number *",
+      "selector": "#bank_account_holder",
+      "currentValue": "",
+      "isInsideIframe": true,
+      "iframeIndex": 1,
+      "iframeIdentifier": "kyc_bank_iframe"
+    },
+    {
+      "id": "kyc_bank_iframe::bank_account_number",
+      "name": "account_number",
+      "type": "text",
+      "label": "Bank Account Number *",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "required": true,
+      "hint": "Max size 150 KB, PDF or JPG only",
+      "selector": "#bank_account_number",
+      "currentValue": "",
+      "isInsideIframe": true,
+      "iframeIndex": 1,
+      "iframeIdentifier": "kyc_bank_iframe"
+    },
+    {
+      "id": "kyc_bank_iframe::bank_ifsc_code",
+      "name": "ifsc_code",
+      "type": "text",
+      "label": "Bank IFSC Code *",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "required": true,
+      "hint": "Max size 150 KB, PDF or JPG only",
+      "selector": "#bank_ifsc_code",
+      "currentValue": "",
+      "isInsideIframe": true,
+      "iframeIndex": 1,
+      "iframeIdentifier": "kyc_bank_iframe"
+    },
+    {
+      "id": "kyc_bank_iframe::bank_account_type",
+      "name": "account_type",
+      "type": "select",
+      "label": "Account Type",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "required": false,
+      "options": [
+        {
+          "label": "Savings Account",
+          "value": "savings"
+        },
+        {
+          "label": "Current Account",
+          "value": "current"
+        }
+      ],
+      "hint": "Passbook Front Page / Cancelled Cheque *\n            Max size 150 KB, PDF or JPG only",
+      "selector": "#bank_account_type",
+      "currentValue": "savings",
+      "isInsideIframe": true,
+      "iframeIndex": 1,
+      "iframeIdentifier": "kyc_bank_iframe"
+    },
+    {
+      "id": "kyc_bank_iframe::cancelled_cheque_file",
+      "name": "cancelled_cheque",
+      "type": "file",
+      "label": "Passbook Front Page / Cancelled Cheque *",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "required": true,
+      "hint": "Max size 150 KB, PDF or JPG only",
+      "accept": ".pdf,.jpg,.jpeg",
+      "maxSizeBytes": 153600,
+      "selector": "#cancelled_cheque_file",
+      "currentValue": "",
+      "isInsideIframe": true,
+      "iframeIndex": 1,
+      "iframeIdentifier": "kyc_bank_iframe"
+    }
+  ],
+  "hasCaptcha": true,
+  "timestamp": 1795448121293
+}
