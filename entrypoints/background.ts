@@ -312,14 +312,12 @@ export default defineBackground(() => {
     }
 
     if (message.type === 'GET_API_CONFIG') {
-      chrome.storage.local.get(['geminiApiKey', 'claudeApiKey', 'sarvamApiKey', 'elevenLabsApiKey', 'voiceEnabled', 'provider', 'geminiModel', 'claudeModel']).then((items) => {
+      chrome.storage.local.get(['geminiApiKey', 'claudeApiKey', 'sarvamApiKey', 'provider', 'geminiModel', 'claudeModel']).then((items) => {
         const config: ApiConfig = {
           provider: (items.provider as 'gemini' | 'claude') || 'gemini',
           geminiApiKey: items.geminiApiKey || DEFAULT_GEMINI_KEY,
           claudeApiKey: items.claudeApiKey || '',
           sarvamApiKey: items.sarvamApiKey || DEFAULT_SARVAM_KEY,
-          elevenLabsApiKey: items.elevenLabsApiKey || '',
-          voiceEnabled: Boolean(items.voiceEnabled),
           geminiModel: items.geminiModel || DEFAULT_GEMINI_MODEL,
           claudeModel: items.claudeModel || 'claude-3-5-sonnet-20241022'
         };
@@ -385,29 +383,6 @@ export default defineBackground(() => {
         .then(async (r) => {
           if (r.ok) {
             sendResponse({ success: true, status: 'valid' });
-          } else {
-            const errTxt = await r.text();
-            sendResponse({ success: false, error: `HTTP ${r.status}: ${errTxt}` });
-          }
-        })
-        .catch((err) => sendResponse({ success: false, error: String(err) }));
-      return true;
-    }
-
-    if (message.type === 'VERIFY_ELEVENLABS_KEY') {
-      const apiKey = (message as any).payload?.apiKey;
-      if (!apiKey || !apiKey.trim()) {
-        sendResponse({ success: false, error: 'Please enter an ElevenLabs API key' });
-        return true;
-      }
-      fetch('https://api.elevenlabs.io/v1/user', {
-        headers: { 'xi-api-key': apiKey.trim() }
-      })
-        .then(async (r) => {
-          if (r.ok) {
-            const data = await r.json();
-            const tier = data.subscription?.tier || 'connected';
-            sendResponse({ success: true, tier });
           } else {
             const errTxt = await r.text();
             sendResponse({ success: false, error: `HTTP ${r.status}: ${errTxt}` });

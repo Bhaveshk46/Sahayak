@@ -22,14 +22,12 @@ export type ExtensionMessage =
   | { type: 'SARVAM_PARSE_DOCUMENT'; payload: { docId: string; docName: string; mimeType: string; blobDataHex: string; language?: string } }
   | { type: 'MATCH_FIELDS_WITH_LLM'; payload: { fields: any[]; profileKeys?: string[]; model?: string } }
   | { type: 'VERIFY_GEMINI_KEY'; payload: { apiKey: string } }
-  | { type: 'VERIFY_ELEVENLABS_KEY'; payload: { apiKey: string } }
   | { type: 'UNLOCK_STORAGE'; payload: { passphrase: string } }
   | { type: 'LOCK_STORAGE' }
   | { type: 'GET_STORED_DOCUMENTS_METADATA' }
   | { type: 'GET_DECRYPTED_DOCUMENT_FOR_ATTACH'; payload: { docId: string } }
   | { type: 'TOGGLE_QUICK_ATTACH'; payload: { visible: boolean } }
   | { type: 'GUIDED_FALLBACK_TRIGGERED'; payload: { slotLabel: string; documentId: string; documentName: string; documentType: string } }
-  | { type: 'MIC_PERMISSION_GRANTED' }
   | { type: 'LOG_EVENT'; payload: { level: 'info' | 'warn' | 'error'; message: string; data?: unknown } };
 
 export interface MessageResponse<T = unknown> {

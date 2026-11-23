@@ -85,8 +85,6 @@ export interface ApiConfig {
   geminiApiKey: string;
   claudeApiKey: string;
   sarvamApiKey?: string;
-  elevenLabsApiKey?: string;
-  voiceEnabled?: boolean;
   geminiModel: string;
   claudeModel: string;
 }
