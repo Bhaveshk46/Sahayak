@@ -332,7 +332,9 @@ export class QuickAttachWidget {
     this.searchInput = document.createElement('input');
     this.searchInput.type = 'text';
     this.searchInput.className = 'search-input';
-    this.searchInput.placeholder = 'Type to attach...';
+    this.searchInput.placeholder = 'Type: photo, income...';
+    this.searchInput.setAttribute('aria-label', 'Attach a document');
+    this.searchInput.title = 'Attach a document';
 
     inputWrapper.appendChild(icon);
     inputWrapper.appendChild(this.searchInput);
@@ -632,7 +634,7 @@ export class QuickAttachWidget {
     if (wasCompressed && originalSize && compressedSize) {
       const origKB = Math.round(originalSize / 1024);
       const newKB = Math.round(compressedSize / 1024);
-      titleDiv.textContent = `✓ Compressed ${origKB} KB -> ${newKB} KB & Attached`;
+      titleDiv.textContent = `✓ Attached: ${fileName} (Compressed ${origKB} KB -> ${newKB} KB)`;
     } else {
       titleDiv.textContent = `✓ Attached: ${fileName}`;
     }
@@ -668,7 +670,11 @@ export class QuickAttachWidget {
     ) {
       errDiv.textContent = '🔒 Vault is locked. Open Side Panel to unlock.';
     } else {
-      errDiv.textContent = `⚠️ Fallback: ${errorText}`;
+      errDiv.textContent = "Couldn't attach. Click here to choose the file.";
+      errDiv.style.cursor = 'pointer';
+      errDiv.addEventListener('click', () => {
+        this.slotElement.click();
+      });
     }
     this.statusBadge.appendChild(errDiv);
   }
@@ -693,7 +699,7 @@ export class QuickAttachWidget {
     }
 
     this.attachedFileName = null;
-    this.searchInput.placeholder = 'Type to attach...';
+    this.searchInput.placeholder = 'Type: photo, income...';
     this.searchInput.value = '';
     const container = this.shadowRoot.querySelector('.widget-container');
     container?.classList.remove('attached');

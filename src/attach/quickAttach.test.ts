@@ -266,7 +266,7 @@ describe('M6 Quick-Attach Test Suite', () => {
 
       const input = widget.shadowRoot.querySelector('input.search-input') as HTMLInputElement;
       expect(input).toBeDefined();
-      expect(input.placeholder).toBe('Type to attach...');
+      expect(input.placeholder).toBe('Type: photo, income...');
 
       widget.destroy();
       slot.remove();
