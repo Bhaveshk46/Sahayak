@@ -94,7 +94,6 @@ export const CustomDropdown: React.FC<CustomDropdownProps> = ({
               </li>
             ))}
           </ul>
-        )}
       </div>
     </div>
   );
