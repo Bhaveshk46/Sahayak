@@ -165,7 +165,7 @@ export function findHintNearElement(element: HTMLElement): string | undefined {
   return undefined;
 }
 
-// ─── CAPTCHA detection ──────────────────────────────────────────────
+// ─── CAPTCHA & Cookie Consent detection ─────────────────────────────
 
 export function hasCaptchaInRoot(root: Document | ShadowRoot): boolean {
   return Boolean(
@@ -175,6 +175,53 @@ export function hasCaptchaInRoot(root: Document | ShadowRoot): boolean {
       'iframe[src*="recaptcha"], iframe[src*="turnstile"]'
     )
   );
+}
+
+/**
+ * Identify and filter out GDPR/Cookiebot/OneTrust cookie consent banners and tracking checkboxes.
+ */
+export function isCookieOrConsentElement(el: HTMLElement, labelText: string = ''): boolean {
+  try {
+    // 1. Ancestor check: container matches common cookie consent wrappers
+    const cookieAncestor = el.closest(
+      '#CybotCookiebotDialog, #onetrust-consent-sdk, #onetrust-banner-sdk, ' +
+      '[id*="cookie-banner" i], [class*="cookie-banner" i], ' +
+      '[id*="cookie-consent" i], [class*="cookie-consent" i], ' +
+      '[id*="cookie-dialog" i], [class*="cookie-dialog" i], ' +
+      '[id*="cookie-notice" i], [class*="cookie-notice" i], ' +
+      '[id*="consent-banner" i], [class*="consent-banner" i], ' +
+      '[id*="consent-dialog" i], [class*="consent-dialog" i], ' +
+      '[id*="gdpr" i], [class*="gdpr" i], ' +
+      '[aria-label*="cookie consent" i], [aria-label*="cookie policy" i]'
+    );
+    if (cookieAncestor) return true;
+  } catch {
+    // In headless environments el.closest may not support certain complex selectors
+  }
+
+  // 2. Element ID or name check
+  const idName = `${el.id || ''} ${el.getAttribute('name') || ''}`.toLowerCase();
+  if (
+    idName.includes('cookie') ||
+    idName.includes('cybot') ||
+    idName.includes('onetrust')
+  ) {
+    return true;
+  }
+
+  // 3. Known cookie category labels (e.g. "Strictly necessary (50)", "Preferences (18)", "Statistics (33)", "Marketing (97)")
+  const lowerLabel = labelText.toLowerCase().trim();
+  if (
+    /^(strictly necessary|preferences|statistics|marketing|analytics|performance)\s*\(\d+\)/i.test(lowerLabel) ||
+    lowerLabel.includes('strictly necessary') ||
+    lowerLabel.includes('necessary cookies') ||
+    lowerLabel.includes('marketing cookies') ||
+    lowerLabel.includes('analytics cookies')
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 // ─── Stable field ID generation ─────────────────────────────────────
@@ -206,11 +253,12 @@ function extractFieldsFromRoot(
   const framePrefix = iframeIdentifier ? `${iframeIdentifier}::` : '';
 
   // Collect all candidate elements
-  const elements = root.querySelectorAll<HTMLElement>(
+  const rawElements = root.querySelectorAll<HTMLElement>(
     'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]), ' +
     'select, textarea, ' +
     '[data-formpilot-custom-dropdown], [data-formpilot-dropzone], [role="combobox"]'
   );
+  const elements = Array.from(rawElements).filter(el => !isCookieOrConsentElement(el));
 
   // ── Phase 1: group radio buttons by name ──────────────────────────
   const radioGroups = new Map<string, HTMLInputElement[]>();
@@ -248,6 +296,9 @@ function extractFieldsFromRoot(
 
     // The group label: look for a <legend>, <label>, or heading that wraps/precedes all radios
     const groupLabel = resolveRadioGroupLabel(radios);
+    if (radios.length > 0 && isCookieOrConsentElement(radios[0], groupLabel.label)) {
+      continue;
+    }
     const required = radios.some(r => r.hasAttribute('required') || r.getAttribute('aria-required') === 'true');
 
     const selector = `input[name="${CSS.escape(groupName)}"]`;
@@ -298,6 +349,12 @@ function extractFieldsFromRoot(
 
     const nameAttr = el.getAttribute('name') || el.id || stableId;
     const labelResult = findLabelForElement(el, root);
+
+    // Filter out cookie consent dialogs, GDPR banners, and tracking category checkboxes
+    if (isCookieOrConsentElement(el, labelResult.label)) {
+      continue;
+    }
+
     const hint = findHintNearElement(el);
 
     const required =
