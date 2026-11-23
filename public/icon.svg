@@ -1,0 +1,34 @@
+<svg width="128" height="128" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4338CA"/>
+      <stop offset="1" stop-color="#1E1B4B"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="30" y1="20" x2="90" y2="100" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FDE047"/>
+      <stop offset="0.5" stop-color="#F59E0B"/>
+      <stop offset="1" stop-color="#D97706"/>
+    </linearGradient>
+    <linearGradient id="checkGrad" x1="40" y1="60" x2="85" y2="75" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#34D399"/>
+      <stop offset="1" stop-color="#059669"/>
+    </linearGradient>
+    <filter id="shadow" x="-10" y="-10" width="140" height="140" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#000000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Container -->
+  <rect width="120" height="120" rx="28" fill="url(#bgGrad)" filter="url(#shadow)"/>
+  <rect x="1" y="1" width="118" height="118" rx="27" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
+  
+  <!-- Stylized Kalam / Feather Quill Spine & Dynamic Wing -->
+  <path d="M78 24C65 26 48 36 40 50C32 64 34 78 42 86C48 92 56 94 62 92C54 84 52 74 58 64C64 54 75 42 86 34C89 31 85 24 78 24Z" fill="url(#goldGrad)"/>
+  
+  <!-- Aerodynamic Forward Speed Accent -->
+  <path d="M84 32C76 46 64 62 52 72C46 77 40 80 34 82C40 81 48 78 56 72C68 63 80 47 88 34C89 32 86 31 84 32Z" fill="#FEF08A" opacity="0.8"/>
+
+  <!-- Dynamic Completed Checkmark (Green Trust Accent) -->
+  <path d="M46 62L58 74L86 42" stroke="url(#checkGrad)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M46 62L58 74L86 42" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+</svg>
