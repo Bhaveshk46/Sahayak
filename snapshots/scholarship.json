@@ -1,5 +1,5 @@
 {
-  "id": "schema_1795452535845",
+  "id": "schema_1795453299711",
   "url": "http://localhost:3000/",
   "title": "Web Form",
   "fields": [
@@ -55,6 +55,20 @@
       "required": true,
       "hint": "Max size 200 KB, PDF only",
       "selector": "#student_dob",
+      "currentValue": "",
+      "isInsideIframe": false
+    },
+    {
+      "id": "guardian_occupation",
+      "name": "guardian_occupation",
+      "type": "text",
+      "label": "Guardian Occupation *",
+      "labelSource": "label-for",
+      "labelConfidence": 1,
+      "placeholder": "e.g. Government Service / Agriculture",
+      "required": true,
+      "hint": "Max size 200 KB, PDF only",
+      "selector": "#guardian_occupation",
       "currentValue": "",
       "isInsideIframe": false
     },
@@ -188,5 +202,5 @@
     }
   ],
   "hasCaptcha": true,
-  "timestamp": 1795452535845
+  "timestamp": 1795453299711
 }

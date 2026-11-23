@@ -35,6 +35,23 @@ import { ProfileRecord } from '../../src/types/profile';
 import { UndoRecord } from '../../src/fillers/formFiller';
 import { TimelineDrawer } from '../../src/timeline/TimelineDrawer';
 
+const cleanDisplayLabel = (label: string): string => {
+  return (label || '').replace(/\s*\*+\s*$/, '').trim();
+};
+
+const formatSchemaFoundMessage = (fields: FormField[]): string => {
+  const docs = fields.filter((f) => f.type === 'file' || f.type === 'dropzone').length;
+  const captchas = fields.filter((f) => f.name.toLowerCase().includes('captcha') || f.id.toLowerCase().includes('captcha')).length;
+  const questions = fields.length - docs - captchas;
+
+  const parts: string[] = [];
+  if (questions > 0) parts.push(`${questions} question${questions > 1 ? 's' : ''}`);
+  if (docs > 0) parts.push(`${docs} document${docs > 1 ? 's' : ''}`);
+  if (captchas > 0) parts.push(`${captchas} check`);
+
+  return `Found ${parts.join(', ')} on this form.`;
+};
+
 export default function App() {
   // Navigation: 'form' (main review & fill) | 'documents' (manage documents & saved details) | 'settings'
   const [currentScreen, setCurrentScreen] = useState<'form' | 'documents' | 'settings'>('form');
@@ -138,7 +155,7 @@ export default function App() {
       (cachedResp) => {
         if (cachedResp?.payload && cachedResp.payload.fields?.length > 0) {
           setSchema(cachedResp.payload);
-          setStatusMessage(`Found ${cachedResp.payload.fields.length} questions on this form.`);
+          setStatusMessage(formatSchemaFoundMessage(cachedResp.payload.fields));
         }
       }
     );
@@ -153,7 +170,7 @@ export default function App() {
             (bgResp) => {
               if (bgResp?.success && bgResp.schema && bgResp.schema.fields?.length > 0) {
                 setSchema(bgResp.schema);
-                setStatusMessage(`Found ${bgResp.schema.fields.length} questions on this form.`);
+                setStatusMessage(formatSchemaFoundMessage(bgResp.schema.fields));
               } else {
                 setSchema(null);
                 setStatusMessage("I can't find a form on this page. Open your application form and try again.");
@@ -163,7 +180,7 @@ export default function App() {
         } else {
           if (resp.schema && resp.schema.fields && resp.schema.fields.length > 0) {
             setSchema(resp.schema);
-            setStatusMessage(`Found ${resp.schema.fields.length} questions on this form.`);
+            setStatusMessage(formatSchemaFoundMessage(resp.schema.fields));
           } else {
             setSchema(null);
             setStatusMessage("I can't find a form on this page. Open your application form and try again.");
@@ -187,7 +204,7 @@ export default function App() {
     const messageListener = (message: ExtensionMessage) => {
       if (message.type === 'FORM_SCHEMA_OBSERVED') {
         setSchema(message.payload);
-        setStatusMessage(`Found ${message.payload.fields.length} questions on this form.`);
+        setStatusMessage(formatSchemaFoundMessage(message.payload.fields));
       }
     };
     chrome.runtime.onMessage.addListener(messageListener);
@@ -953,7 +970,7 @@ export default function App() {
                         >
                           <div className="flex items-start justify-between">
                             <span className="font-bold text-slate-800 text-sm">
-                              {item.field.label || item.field.name}
+                              {cleanDisplayLabel(item.field.label || item.field.name)}
                               {item.field.required && <span className="text-rose-600 ml-1">*</span>}
                             </span>
                             <span className="px-2 py-0.5 bg-rose-100 text-rose-800 rounded-full text-[10px] font-bold">
@@ -1025,7 +1042,7 @@ export default function App() {
                         >
                           <div className="flex items-start justify-between">
                             <span className="font-bold text-slate-800 text-sm">
-                              {item.field.label || item.field.name}
+                              {cleanDisplayLabel(item.field.label || item.field.name)}
                             </span>
                             <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full text-[10px] font-bold">
                               Please check
@@ -1102,7 +1119,7 @@ export default function App() {
                           >
                             <div className="flex items-start justify-between">
                               <span className="font-semibold text-slate-800 text-sm">
-                                {item.field.label || item.field.name}
+                                {cleanDisplayLabel(item.field.label || item.field.name)}
                               </span>
                               <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-bold">
                                 Ready
@@ -1196,7 +1213,7 @@ export default function App() {
                           className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1 text-xs"
                         >
                           <span className="font-bold text-slate-800 text-sm">
-                            {item.field.label || item.field.name}
+                            {cleanDisplayLabel(item.field.label || item.field.name)}
                           </span>
                           <p className="text-slate-500 text-xs">
                             Upload slot detected. Use the floating 📎 box on the webpage to attach your document in one click.
@@ -1220,7 +1237,7 @@ export default function App() {
                           className="p-3 bg-amber-50/40 border border-amber-200 rounded-xl space-y-1 text-xs"
                         >
                           <span className="font-bold text-slate-800 text-sm">
-                            {item.field.label || item.field.name}
+                            {cleanDisplayLabel(item.field.label || item.field.name)}
                           </span>
                           <p className="text-slate-600 text-xs">
                             For your security, verification questions and final submission must always be completed by you on the page.

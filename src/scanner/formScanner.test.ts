@@ -29,6 +29,10 @@ describe('Form Scanner Comprehensive Multi-Form Evaluation (M2)', () => {
           <input type="date" id="student_dob" name="date_of_birth" required />
         </div>
         <div>
+          <label for="guardian_occupation">Guardian Occupation *</label>
+          <input type="text" id="guardian_occupation" name="guardian_occupation" required placeholder="e.g. Government Service / Agriculture" />
+        </div>
+        <div>
           <label for="social_category">Social Category *</label>
           <select id="social_category" name="social_category">
             <option value="GENERAL">General</option>
@@ -84,8 +88,8 @@ describe('Form Scanner Comprehensive Multi-Form Evaluation (M2)', () => {
 
     const schema = scanDocumentForms();
     expect(schema.hasCaptcha).toBe(true);
-    // 10 form fields + 1 captcha checkbox = 11 total
-    expect(schema.fields.length).toBe(11);
+    // 11 form fields + 1 captcha checkbox = 12 total
+    expect(schema.fields.length).toBe(12);
 
     // Assert name & label resolution
     const nameField = schema.fields.find(f => f.name === 'full_name');
