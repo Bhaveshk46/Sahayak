@@ -28,16 +28,18 @@ if (!zipFile) {
 }
 
 const srcZipPath = path.join(outputDir, zipFile);
-const targetZipPath = path.join(distDir, 'formpilot-extension-v1.0.0.zip');
+const targetZipPath = path.join(distDir, 'sahayak-extension-v1.0.0.zip');
+const legacyZipPath = path.join(distDir, 'formpilot-extension-v1.0.0.zip');
 
 fs.copyFileSync(srcZipPath, targetZipPath);
+fs.copyFileSync(srcZipPath, legacyZipPath);
 
 const stats = fs.statSync(targetZipPath);
 const sizeKB = (stats.size / 1024).toFixed(2);
 
 console.log('====================================================');
-console.log('✅ FormPilot Extension Package Ready for Submission!');
-console.log(`📦 File: dist/formpilot-extension-v1.0.0.zip`);
+console.log('✅ Sahayak Extension Package Ready for Submission!');
+console.log(`📦 File: dist/sahayak-extension-v1.0.0.zip`);
 console.log(`📊 Size: ${sizeKB} KB (${stats.size} bytes)`);
 console.log(`📂 Unpacked Directory: .output/chrome-mv3/`);
 console.log('====================================================');

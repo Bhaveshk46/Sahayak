@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Shield,
   CheckCircle2,
-  Bot,
   Save,
   Sparkles,
   AlertCircle,
@@ -118,11 +117,9 @@ export default function OptionsApp() {
         {/* Top Header */}
         <div className="bg-slate-900 px-6 py-4 text-white flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center font-bold shadow-xs">
-              <Bot className="w-5 h-5 text-white" />
-            </div>
+            <img src="/icon-48.png" alt="Sahayak Logo" className="w-9 h-9 rounded-lg shadow-xs object-cover border border-amber-400/30" />
             <div>
-              <h1 className="text-base font-bold tracking-tight">FormPilot Preferences</h1>
+              <h1 className="text-base font-bold tracking-tight">Sahayak Preferences</h1>
               <p className="text-xs text-slate-400">Autonomous Form Agent Settings & Privacy Governance</p>
             </div>
           </div>

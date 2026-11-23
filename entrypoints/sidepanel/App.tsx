@@ -610,12 +610,10 @@ export default function App() {
       {/* ── TOP HEADER ── */}
       <header className="px-4 py-3 bg-white border-b border-slate-200 flex items-center justify-between shadow-2xs">
         <div className="flex items-center space-x-2.5">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold shadow-xs">
-            <span className="text-lg">✈️</span>
-          </div>
+          <img src="/icon-48.png" alt="Sahayak Logo" className="w-8 h-8 rounded-lg shadow-xs object-cover border border-amber-400/30" />
           <div>
-            <h1 className="font-bold text-lg text-slate-900 leading-tight">FormPilot</h1>
-            <p className="text-xs text-slate-500 font-medium">Automatic form helper</p>
+            <h1 className="font-bold text-lg text-slate-900 leading-tight">Sahayak</h1>
+            <p className="text-xs text-slate-500 font-medium">Digital form assistant</p>
           </div>
         </div>
 

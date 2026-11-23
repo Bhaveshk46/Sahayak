@@ -4,16 +4,22 @@ import { loadEnv } from 'vite';
 export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   manifest: {
-    name: 'FormPilot - AI Form Browser Agent',
-    description: 'Autonomous browser agent for completing web forms securely on-device.',
+    name: 'Sahayak - AI Form Browser Agent',
+    description: 'Privacy-preserving autonomous form browser agent for scholarships, citizen portals, and job applications.',
     version: '1.0.0',
+    icons: {
+      16: 'icon-16.png',
+      32: 'icon-32.png',
+      48: 'icon-48.png',
+      128: 'icon-128.png',
+    },
     permissions: [
       'storage',
       'sidePanel',
       'activeTab',
       'scripting'
     ],
-    // Host permission rationale: FormPilot is a generalized autonomous form browser agent
+    // Host permission rationale: Sahayak is a generalized autonomous form browser agent
     // that users activate on statutory portals, government services, and employment applications.
     // It requires access across web origins to observe form fields, detect iframes, and inject
     // quick-attach widgets strictly on-demand.
@@ -27,11 +33,17 @@ export default defineConfig({
           default: 'Ctrl+Shift+F',
           mac: 'Command+Shift+F'
         },
-        description: 'Open FormPilot Side Panel'
+        description: 'Open Sahayak Side Panel'
       }
     },
     action: {
-      default_title: 'Open FormPilot Side Panel (Ctrl+Shift+F)'
+      default_title: 'Open Sahayak Side Panel (Ctrl+Shift+F)',
+      default_icon: {
+        16: 'icon-16.png',
+        32: 'icon-32.png',
+        48: 'icon-48.png',
+        128: 'icon-128.png',
+      },
     },
     side_panel: {
       default_path: 'sidepanel.html'

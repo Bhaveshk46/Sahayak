@@ -1,7 +1,7 @@
-# FormPilot 🚀
+# Sahayak (सहायक) 🪶
 ### Privacy-Preserving Autonomous Form Browser Agent for Google Chrome (Manifest V3)
 
-FormPilot is an on-device autonomous browser agent that completes complex public service, scholarship, statutory KYC, and job application forms on Google Chrome. Operating on an observable **OBSERVE → DECIDE → CHECK → ACT → ERROR RECOVERY** agent loop, FormPilot eliminates repetitive data entry while enforcing strict zero-data-leakage privacy.
+Sahayak (सहायक) is an on-device autonomous browser agent that completes complex public service, scholarship, statutory KYC, and job application forms on Google Chrome. Operating on an observable **OBSERVE → DECIDE → CHECK → ACT → ERROR RECOVERY** agent loop, Sahayak eliminates repetitive data entry while enforcing strict zero-data-leakage privacy.
 
 ---
 
