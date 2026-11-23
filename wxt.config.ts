@@ -4,8 +4,8 @@ import { loadEnv } from 'vite';
 export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   manifest: {
-    name: 'Sahayak - AI Form Browser Agent',
-    description: 'Privacy-preserving autonomous form browser agent for scholarships, citizen portals, and job applications.',
+    name: 'Sahayak - Form Browser Assistant',
+    description: 'Privacy-preserving on-device form browser assistant for scholarships, citizen portals, and job applications.',
     version: '1.0.0',
     icons: {
       16: 'icon-16.png',
@@ -19,7 +19,7 @@ export default defineConfig({
       'activeTab',
       'scripting'
     ],
-    // Host permission rationale: Sahayak is a generalized autonomous form browser agent
+    // Host permission rationale: Sahayak is a generalized on-device form browser assistant
     // that users activate on statutory portals, government services, and employment applications.
     // It requires access across web origins to observe form fields, detect iframes, and inject
     // quick-attach widgets strictly on-demand.

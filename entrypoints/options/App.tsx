@@ -120,7 +120,7 @@ export default function OptionsApp() {
             <img src="/icon-48.png" alt="Sahayak Logo" className="w-9 h-9 rounded-lg shadow-xs object-cover border border-amber-400/30" />
             <div>
               <h1 className="text-base font-bold tracking-tight">Sahayak Preferences</h1>
-              <p className="text-xs text-slate-400">Autonomous Form Agent Settings & Privacy Governance</p>
+              <p className="text-xs text-slate-400">Form Browser Assistant Settings & Privacy Governance</p>
             </div>
           </div>
           <div className="flex items-center space-x-1.5 text-xs bg-slate-800 px-2.5 py-1 rounded-full text-slate-300 font-mono border border-slate-700">
