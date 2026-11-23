@@ -279,7 +279,8 @@ export function fillField(
         if (
           val.toLowerCase() === value.toLowerCase() ||
           text.toLowerCase() === value.toLowerCase() ||
-          text.toLowerCase().includes(value.toLowerCase())
+          text.toLowerCase().includes(value.toLowerCase()) ||
+          (value.toLowerCase().includes(val.toLowerCase()) && val.length > 2)
         ) {
           targetOption = opt;
           break;
@@ -287,11 +288,24 @@ export function fillField(
       }
 
       if (targetOption) {
+        targetOption.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
         targetOption.click();
+        dispatchInputEvents(element);
         return {
           ok: true,
           previousValue,
           newValue: targetOption.textContent?.trim() || value,
+          fieldId: field.id,
+        };
+      }
+
+      // If the dropdown already displays or matches the desired value
+      const currentText = element.textContent?.trim().toLowerCase() || '';
+      if (value && currentText.includes(value.toLowerCase())) {
+        return {
+          ok: true,
+          previousValue,
+          newValue: value,
           fieldId: field.id,
         };
       }
@@ -370,7 +384,18 @@ export function highlightField(
       element.style.transition = originalTransition;
     }, 2000);
   } else if (status === 'error') {
-    element.style.outline = '3px dashed #ef4444'; // Red
+    element.style.outline = '3px dashed #ef4444'; // Red alert
     element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    // Dismiss red outline on interaction or after 6 seconds
+    const clearErrorHighlight = () => {
+      element.style.outline = originalOutline;
+      element.style.transition = originalTransition;
+      element.removeEventListener('focus', clearErrorHighlight);
+      element.removeEventListener('click', clearErrorHighlight);
+    };
+    element.addEventListener('focus', clearErrorHighlight, { once: true });
+    element.addEventListener('click', clearErrorHighlight, { once: true });
+    setTimeout(clearErrorHighlight, 6000);
   }
 }
