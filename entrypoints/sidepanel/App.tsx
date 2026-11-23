@@ -61,6 +61,8 @@ export default function App() {
   const [editingFieldId, setEditingFieldId] = useState<string | null>(null);
   const [editValueInput, setEditValueInput] = useState<string>('');
   const [inlineAddValues, setInlineAddValues] = useState<Record<string, string>>({});
+  const [manualValues, setManualValues] = useState<Record<string, string>>({});
+  const [justSavedFieldId, setJustSavedFieldId] = useState<string | null>(null);
   const [quickAttachVisible, setQuickAttachVisible] = useState<boolean>(true);
   const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
   const [showTimeline, setShowTimeline] = useState<boolean>(false);
@@ -100,10 +102,17 @@ export default function App() {
 
   const getActiveTab = useCallback(async (): Promise<chrome.tabs.Tab | undefined> => {
     try {
-      const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-      if (tab?.id) return tab;
       const [currentTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      return currentTab;
+      if (currentTab?.id && currentTab.url && !currentTab.url.startsWith('chrome://') && !currentTab.url.startsWith('chrome-extension://')) {
+        return currentTab;
+      }
+      const [lastFocused] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+      if (lastFocused?.id && lastFocused.url && !lastFocused.url.startsWith('chrome://') && !lastFocused.url.startsWith('chrome-extension://')) {
+        return lastFocused;
+      }
+      const allTabs = await chrome.tabs.query({});
+      const webTab = allTabs.find((t) => t.active && t.url && (t.url.startsWith('http://') || t.url.startsWith('https://') || t.url.startsWith('file://')));
+      return webTab || currentTab || lastFocused;
     } catch {
       return undefined;
     }
@@ -123,15 +132,26 @@ export default function App() {
 
     setActiveTabInfo({ id: tab.id, url: tab.url, title: tab.title });
 
+    // Instantly check for cached schema from background to avoid blank-screen delay
+    chrome.runtime.sendMessage(
+      { type: 'GET_ACTIVE_SCHEMA', payload: { tabId: tab.id } } as ExtensionMessage,
+      (cachedResp) => {
+        if (cachedResp?.payload && cachedResp.payload.fields?.length > 0) {
+          setSchema(cachedResp.payload);
+          setStatusMessage(`Found ${cachedResp.payload.fields.length} questions on this form.`);
+        }
+      }
+    );
+
     chrome.runtime.sendMessage(
       { type: 'TRIGGER_SCAN_ALL_FRAMES', payload: { tabId: tab.id } } as ExtensionMessage,
       (resp) => {
+        setLoading(false);
         if (chrome.runtime.lastError || !resp?.success) {
           chrome.runtime.sendMessage(
             { type: 'INJECT_AND_SCAN', payload: { tabId: tab.id! } } as ExtensionMessage,
             (bgResp) => {
-              setLoading(false);
-              if (bgResp?.success && bgResp.schema) {
+              if (bgResp?.success && bgResp.schema && bgResp.schema.fields?.length > 0) {
                 setSchema(bgResp.schema);
                 setStatusMessage(`Found ${bgResp.schema.fields.length} questions on this form.`);
               } else {
@@ -141,8 +161,7 @@ export default function App() {
             }
           );
         } else {
-          setLoading(false);
-          if (resp.schema && resp.schema.fields.length > 0) {
+          if (resp.schema && resp.schema.fields && resp.schema.fields.length > 0) {
             setSchema(resp.schema);
             setStatusMessage(`Found ${resp.schema.fields.length} questions on this form.`);
           } else {
@@ -192,12 +211,13 @@ export default function App() {
         fields: schema.fields,
         urlOrOrigin: schema.url,
         profileRecords,
+        manualValues,
       });
       setPlanItems(res.items);
     } catch (err) {
       console.warn('[FormPilot] Decision matching error:', err);
     }
-  }, [schema, profileRecords, isVaultUnlocked]);
+  }, [schema, profileRecords, isVaultUnlocked, manualValues]);
 
   useEffect(() => {
     computePlan();
@@ -393,12 +413,14 @@ export default function App() {
 
   // Save inline change
   const handleSaveInlineEdit = (fieldId: string) => {
+    const trimmed = editValueInput.trim();
+    setManualValues((prev) => ({ ...prev, [fieldId]: trimmed }));
     setPlanItems((prev) =>
       prev.map((item) => {
         if (item.field.id === fieldId) {
           return {
             ...item,
-            targetValue: editValueInput,
+            targetValue: trimmed,
             status: 'ready',
             reason: 'You changed this answer',
             isManualOverride: true,
@@ -413,37 +435,70 @@ export default function App() {
   // Save inline missing detail
   const handleSaveMissingDetail = async (field: FormField, key: string, value: string) => {
     if (!value.trim()) return;
+    const trimmed = value.trim();
 
+    // Determine normalized profile key
+    let profileKey = key;
+    const lower = `${field.label || ''} ${field.name || ''} ${key}`.toLowerCase();
+    if (lower.includes('occupation') || lower.includes('profession') || lower.includes('व्यवसाय')) {
+      profileKey = 'guardianOccupation';
+    }
+
+    // Save in encrypted vault under both normalized key and exact field name
     await saveProfileRecord({
-      key,
-      value: value.trim(),
+      key: profileKey,
+      value: trimmed,
       confidence: 1.0,
       source: 'manual',
       verifiedByUser: true,
     });
 
-    await reloadProfile();
+    if (field.name && field.name !== profileKey) {
+      await saveProfileRecord({
+        key: field.name,
+        value: trimmed,
+        confidence: 1.0,
+        source: 'manual',
+        verifiedByUser: true,
+      });
+    }
 
+    // Set manual value override so it stays ready in decisionEngine
+    setManualValues((prev) => ({ ...prev, [field.id]: trimmed }));
+
+    // Instant local planItems update: move from missing to ready immediately!
     setPlanItems((prev) =>
       prev.map((item) => {
         if (item.field.id === field.id) {
           return {
             ...item,
-            profileKey: key,
-            targetValue: value.trim(),
+            profileKey,
+            targetValue: trimmed,
             status: 'ready',
+            confidence: 1.0,
             reason: 'You saved this answer',
+            isManualOverride: true,
           };
         }
         return item;
       })
     );
 
+    // Show visual confirmation badge
+    setJustSavedFieldId(field.id);
+    setTimeout(() => {
+      setJustSavedFieldId((curr) => (curr === field.id ? null : curr));
+    }, 4000);
+
+    // Clear input value for this field
     setInlineAddValues((prev) => {
       const next = { ...prev };
       delete next[field.id];
       return next;
     });
+
+    // Reload profile records
+    await reloadProfile();
   };
 
   // Toggle quick-attach boxes
@@ -781,8 +836,23 @@ export default function App() {
 
           {/* MAIN SCROLLABLE CONTENT */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {/* Case A: No form detected on page */}
-            {(!schema || schema.fields.length === 0) && (
+            {/* Case A: Scanning/Loading state */}
+            {loading && (!schema || schema.fields.length === 0) && (
+              <div className="py-12 px-4 text-center space-y-4 max-w-xs mx-auto">
+                <div className="w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto">
+                  <RefreshCw className="w-6 h-6 animate-spin" />
+                </div>
+                <div className="space-y-1.5">
+                  <h3 className="font-bold text-base text-slate-800">Looking at your form...</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Scanning this page to detect form questions and documents.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Case B: Truly no form detected on page */}
+            {!loading && (!schema || schema.fields.length === 0) && (
               <div className="py-12 px-4 text-center space-y-4 max-w-xs mx-auto">
                 <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
                   <HelpCircle className="w-6 h-6" />
@@ -800,7 +870,7 @@ export default function App() {
                     className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-bold flex items-center justify-center space-x-2 transition cursor-pointer"
                   >
                     <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                    <span>Looking at your form...</span>
+                    <span>Scan again</span>
                   </button>
 
                   <button
@@ -902,8 +972,18 @@ export default function App() {
                               onChange={(e) =>
                                 setInlineAddValues((prev) => ({ ...prev, [item.field.id]: e.target.value }))
                               }
-                              placeholder="Type your answer here..."
-                              className="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs outline-none focus:ring-2 focus:ring-indigo-500"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  handleSaveMissingDetail(
+                                    item.field,
+                                    item.profileKey || item.field.name,
+                                    inlineAddValues[item.field.id] || ''
+                                  );
+                                }
+                              }}
+                              placeholder="Type your answer and press Enter..."
+                              className="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800"
                             />
                             <button
                               onClick={() =>
@@ -913,11 +993,18 @@ export default function App() {
                                   inlineAddValues[item.field.id] || ''
                                 )
                               }
-                              className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition cursor-pointer"
+                              className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition cursor-pointer shrink-0"
                             >
                               Save
                             </button>
                           </div>
+
+                          {justSavedFieldId === item.field.id && (
+                            <div className="text-emerald-700 text-xs font-semibold flex items-center space-x-1">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>✓ Saved! Added to ready fields.</span>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

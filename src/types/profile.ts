@@ -47,6 +47,7 @@ export const StandardProfileKeysSchema = z.object({
   bankAccount: z.string().optional(),
   ifsc: z.string().optional(),
   bankAccountType: z.string().optional(),
+  guardianOccupation: z.string().optional(),
 });
 
 export type StandardProfile = z.infer<typeof StandardProfileKeysSchema>;

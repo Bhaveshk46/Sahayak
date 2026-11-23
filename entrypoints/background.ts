@@ -164,20 +164,17 @@ export default defineBackground(() => {
         return false;
       }
 
-      // Clear existing schemas for this tab so we get fresh data
-      tabFrameSchemas.delete(targetTabId);
-
-      // Send TRIGGER_SCAN to ALL frames in the tab
-      chrome.tabs.sendMessage(targetTabId, { type: 'TRIGGER_SCAN' } as ExtensionMessage, () => {
-        // The top frame responds here, but iframe frames also receive the message
-        // and will send FORM_SCHEMA_OBSERVED independently.
-        // Wait a moment for all frames to report in, then send aggregated result.
+      // Keep existing schema in memory during rescan to prevent UI flicker
+      // Send TRIGGER_SCAN to all frames
+      chrome.tabs.sendMessage(targetTabId, { type: 'TRIGGER_SCAN' } as ExtensionMessage, (topFrameResp) => {
+        // Wait a brief 150ms for iframe frames to report, then send aggregated result
         setTimeout(() => {
-          const aggregated = getAggregatedSchema(targetTabId);
+          const aggregated = getAggregatedSchema(targetTabId) || (topFrameResp?.schema ? topFrameResp.schema : null);
           sendResponse({ success: true, schema: aggregated });
-          // Also broadcast
-          broadcastAggregatedSchema(targetTabId);
-        }, 800);
+          if (aggregated) {
+            broadcastAggregatedSchema(targetTabId);
+          }
+        }, 150);
       });
 
       return true; // async response

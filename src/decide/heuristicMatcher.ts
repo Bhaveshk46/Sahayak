@@ -216,6 +216,16 @@ export const PROFILE_KEY_SYNONYMS: Record<string, { description: string; synonym
       'खात्याचा प्रकार', 'खाते प्रकार', 'खाता प्रकार', 'खाता का प्रकार'
     ],
   },
+  guardianOccupation: {
+    description: "Guardian's, parent's, or father's occupation or profession",
+    synonyms: [
+      'guardian occupation', 'parent occupation', 'father occupation', 'mother occupation',
+      'occupation', 'profession', 'guardian profession', 'parent profession',
+      'guardian_occupation', 'occupation of guardian', 'occupation of parent',
+      // Hindi / Marathi
+      'पालकांचा व्यवसाय', 'व्यवसाय', 'अभिभावक का व्यवसाय', 'पालक व्यवसाय', 'वडिलांचा व्यवसाय'
+    ],
+  },
 };
 
 export const DOCUMENT_SLOT_SYNONYMS: Record<DocumentType, string[]> = {

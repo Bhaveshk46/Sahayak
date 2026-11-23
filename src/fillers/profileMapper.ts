@@ -62,6 +62,7 @@ export function mapFieldToRealProfile(
     else if (matches(['college', 'institution', 'university'])) targetKey = 'institution';
     else if (matches(['course', 'degree', 'qualification'])) targetKey = 'course';
     else if (matches(['marks', 'percent', 'percentage', 'cgpa'])) targetKey = 'marksPercent';
+    else if (matches(['occupation', 'profession', 'guardian_occupation'])) targetKey = 'guardianOccupation';
     else if (matches(['ifsc'])) targetKey = 'ifsc';
     else if (matches(['bank', 'account'])) targetKey = 'bankAccount';
   }

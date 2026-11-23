@@ -45,6 +45,7 @@ export interface RunDecisionEngineOptions {
   };
   forceFresh?: boolean;
   manualOverrides?: Record<string, string | null>;
+  manualValues?: Record<string, string>;
   fetchFn?: typeof fetch;
 }
 
@@ -65,6 +66,7 @@ export async function runDecisionEngine({
   apiConfig,
   forceFresh = false,
   manualOverrides = {},
+  manualValues = {},
   fetchFn = fetch,
 }: RunDecisionEngineOptions): Promise<DecisionPlanResult> {
   const formSignature = computeFormSignature(urlOrOrigin, fields);
@@ -122,10 +124,27 @@ export async function runDecisionEngine({
 
     // Run Heuristic Matcher
     const heuristic = matchFieldHeuristically(field);
+    let matchedProfileKey = heuristic.profileKey;
+    let matchConfidence = heuristic.confidence;
+    let matchReason = heuristic.reason;
+
+    // Fallback: If heuristic did not map, check if any profile record has an exact key matching field.name or field.id
+    if (!matchedProfileKey) {
+      const candidates = [field.name, field.id, field.name?.toLowerCase(), field.id?.toLowerCase()].filter(Boolean);
+      for (const cand of candidates) {
+        if (profileMap.has(cand)) {
+          matchedProfileKey = cand;
+          matchConfidence = 0.95;
+          matchReason = `Direct match to saved detail "${cand}"`;
+          break;
+        }
+      }
+    }
+
     workingDecisions.set(field.id, {
-      profileKey: heuristic.profileKey,
-      confidence: heuristic.confidence,
-      reason: heuristic.reason,
+      profileKey: matchedProfileKey,
+      confidence: matchConfidence,
+      reason: matchReason,
       isManualOverride: false,
     });
 
@@ -191,6 +210,21 @@ export async function runDecisionEngine({
   const missingKeysSet = new Set<string>();
 
   for (const field of fields) {
+    // Direct user-entered manual value takes highest precedence
+    if (manualValues && manualValues[field.id] !== undefined) {
+      finalItems.push({
+        field,
+        profileKey: field.name || 'manual',
+        targetValue: manualValues[field.id],
+        rawValue: manualValues[field.id],
+        confidence: 1.0,
+        reason: 'You entered this answer',
+        status: 'ready',
+        isManualOverride: true,
+      });
+      continue;
+    }
+
     const decision = workingDecisions.get(field.id) || {
       profileKey: null,
       confidence: 0,
