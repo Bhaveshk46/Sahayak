@@ -105,12 +105,12 @@ export function rankDocumentsForSlot(
   if (cleanQuery) {
     const fuse = new Fuse(documents, {
       keys: [
-        { name: 'name', weight: 0.5 },
+        { name: 'name', weight: 0.4 },
         { name: 'type', weight: 0.3 },
-        { name: 'tags', weight: 0.2 },
+        { name: 'tags', weight: 0.4 },
       ],
       includeScore: true,
-      threshold: 0.45,
+      threshold: 0.55,
       ignoreLocation: true,
     });
 
@@ -125,6 +125,19 @@ export function rankDocumentsForSlot(
     const scoredDocs: RankedDocument[] = documents.map((doc) => {
       const typeMatches = expectedType !== 'other' && doc.type === expectedType;
       let baseScore = scoreMap.get(doc.id) || 0;
+
+      // Direct exact match on custom tags or filename gives instant high priority
+      const hasDirectTagMatch = doc.tags?.some((t) => {
+        const normT = t.trim().toLowerCase();
+        return normT === cleanQuery || normT.includes(cleanQuery) || cleanQuery.includes(normT);
+      });
+      const hasDirectNameMatch = doc.name.toLowerCase().includes(cleanQuery);
+
+      if (hasDirectTagMatch) {
+        baseScore = Math.max(baseScore, 0.95);
+      } else if (hasDirectNameMatch) {
+        baseScore = Math.max(baseScore, 0.85);
+      }
 
       // Boost document if its type matches slot
       if (typeMatches) {

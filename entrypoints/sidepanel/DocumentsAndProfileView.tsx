@@ -11,12 +11,14 @@ import {
   FileCheck,
   Sparkles,
   Loader2,
+  Tag,
 } from 'lucide-react';
 import {
   isStorageUnlocked,
   getAllStoredDocuments,
   deleteDocument,
   saveDocument,
+  updateDocumentMetadata,
   saveProfileRecord,
   getAllDecryptedProfileRecords,
   deleteProfileRecord,
@@ -80,11 +82,24 @@ export const DocumentsAndProfileView: React.FC<{
   const [newDetailKey, setNewDetailKey] = useState<string>('fullName');
   const [newDetailValue, setNewDetailValue] = useState<string>('');
 
+interface UploadQueueItem {
+  file: File;
+  name: string;
+  docType: DocumentType;
+  tagsInput: string;
+}
+
   // Upload queue
-  const [uploadQueue, setUploadQueue] = useState<Array<{ file: File; docType: DocumentType }>>([]);
+  const [uploadQueue, setUploadQueue] = useState<UploadQueueItem[]>([]);
   const [isProcessingUpload, setIsProcessingUpload] = useState<boolean>(false);
   const [extractingDocId, setExtractingDocId] = useState<string | null>(null);
   const [statusNotification, setStatusNotification] = useState<string | null>(null);
+
+  // Edit document metadata (name, type, custom tags)
+  const [editingDocId, setEditingDocId] = useState<string | null>(null);
+  const [editDocName, setEditDocName] = useState<string>('');
+  const [editDocType, setEditDocType] = useState<DocumentType>('other');
+  const [editDocTags, setEditDocTags] = useState<string>('');
 
   // Document preview modal
   const [previewDoc, setPreviewDoc] = useState<{
@@ -174,9 +189,15 @@ export const DocumentsAndProfileView: React.FC<{
   };
 
   const handleFileDrop = (files: FileList | File[]) => {
-    const items = Array.from(files).map((f) => {
+    const items: UploadQueueItem[] = Array.from(files).map((f) => {
       const classified = autoClassifyDocument(f.name);
-      return { file: f, docType: classified.type };
+      const defaultTag = classified.type === 'other' ? '' : classified.type.replace(/_/g, ' ');
+      return {
+        file: f,
+        name: f.name,
+        docType: classified.type,
+        tagsInput: defaultTag,
+      };
     });
     setUploadQueue((prev) => [...prev, ...items]);
     setActiveTab('upload');
@@ -190,15 +211,24 @@ export const DocumentsAndProfileView: React.FC<{
     try {
       let totalExtracted = 0;
       for (const item of uploadQueue) {
+        const parsedTags = item.tagsInput
+          .split(',')
+          .map((t) => t.trim().toLowerCase())
+          .filter(Boolean);
+
+        if (!parsedTags.includes(item.docType)) {
+          parsedTags.push(item.docType);
+        }
+
         const docRecord = await saveDocument(
           item.file,
-          item.file.name,
+          item.name.trim() || item.file.name,
           item.docType,
-          [item.docType]
+          parsedTags
         );
 
         // Extract real details from PDF text, BYOK Gemini vision, OCR, and regex
-        const extracted = await extractDocumentData(item.file, item.file.name, item.docType);
+        const extracted = await extractDocumentData(item.file, item.name || item.file.name, item.docType);
         for (const record of extracted) {
           if (record.value && typeof record.value === 'string' && record.value.trim()) {
             await saveProfileRecord({
@@ -207,7 +237,7 @@ export const DocumentsAndProfileView: React.FC<{
               confidence: record.confidence,
               source: record.source,
               sourceDocId: docRecord.id,
-              sourceDocName: item.file.name,
+              sourceDocName: item.name || item.file.name,
               verifiedByUser: false,
             });
             totalExtracted++;
@@ -230,6 +260,39 @@ export const DocumentsAndProfileView: React.FC<{
       alert('Could not save documents: ' + String(err));
     } finally {
       setIsProcessingUpload(false);
+    }
+  };
+
+  const handleStartEditDoc = (d: Omit<StoredDocument, 'encryptedBlob'>) => {
+    setEditingDocId(d.id);
+    setEditDocName(d.name);
+    setEditDocType(d.type);
+    setEditDocTags((d.tags || []).join(', '));
+  };
+
+  const handleSaveDocMetadata = async (id: string) => {
+    try {
+      const parsedTags = editDocTags
+        .split(',')
+        .map((t) => t.trim().toLowerCase())
+        .filter(Boolean);
+
+      if (!parsedTags.includes(editDocType)) {
+        parsedTags.push(editDocType);
+      }
+
+      await updateDocumentMetadata(id, {
+        name: editDocName.trim(),
+        type: editDocType,
+        tags: parsedTags,
+      });
+
+      setEditingDocId(null);
+      await refreshData();
+      setStatusNotification('✓ Document tags updated! QuickAttach will now match these keywords.');
+      setTimeout(() => setStatusNotification(null), 5000);
+    } catch (err) {
+      alert('Failed to update tags: ' + String(err));
     }
   };
 
@@ -404,6 +467,79 @@ export const DocumentsAndProfileView: React.FC<{
                 const isStale = isDocOutOfDate(d);
                 const title = FRIENDLY_DOC_TITLES[d.type] || 'Document';
 
+                if (editingDocId === d.id) {
+                  return (
+                    <div
+                      key={d.id}
+                      className="p-3 bg-indigo-50/80 rounded-xl border border-indigo-300 space-y-2 text-xs"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-xs text-indigo-900 flex items-center space-x-1">
+                          <Tag className="w-3.5 h-3.5 text-indigo-600" />
+                          <span>Edit Document & QuickAttach Tags</span>
+                        </span>
+                        <button onClick={() => setEditingDocId(null)} className="text-slate-400 hover:text-slate-600">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-semibold text-slate-600">Document Name</label>
+                        <input
+                          type="text"
+                          value={editDocName}
+                          onChange={(e) => setEditDocName(e.target.value)}
+                          className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-semibold text-slate-600">Category Type</label>
+                        <select
+                          value={editDocType}
+                          onChange={(e) => setEditDocType(e.target.value as DocumentType)}
+                          className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs"
+                        >
+                          {Object.entries(FRIENDLY_DOC_TITLES).map(([key, label]) => (
+                            <option key={key} value={key}>{label}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-semibold text-slate-600">
+                          Custom Tags / Search Keywords (comma separated)
+                        </label>
+                        <input
+                          type="text"
+                          value={editDocTags}
+                          onChange={(e) => setEditDocTags(e.target.value)}
+                          placeholder="e.g. income, scholarship, father, bonafide"
+                          className="w-full px-2 py-1 bg-white border border-slate-300 rounded text-xs outline-none focus:border-indigo-500"
+                        />
+                        <p className="text-[10px] text-indigo-700">
+                          💡 Type any of these words into the floating QuickAttach box to instantly match this file!
+                        </p>
+                      </div>
+
+                      <div className="flex justify-end space-x-1.5 pt-1">
+                        <button
+                          onClick={() => setEditingDocId(null)}
+                          className="px-2.5 py-1 bg-white border border-slate-300 rounded text-xs text-slate-600"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => handleSaveDocMetadata(d.id)}
+                          className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-bold"
+                        >
+                          Save Tags
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }
+
                 return (
                   <div
                     key={d.id}
@@ -438,15 +574,38 @@ export const DocumentsAndProfileView: React.FC<{
                       {d.name}
                     </p>
 
+                    {/* Custom Tags Pills */}
+                    {d.tags && d.tags.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1 pt-0.5">
+                        {d.tags.map((t) => (
+                          <span
+                            key={t}
+                            className="px-1.5 py-0.2 bg-indigo-50 border border-indigo-100 text-indigo-700 rounded text-[10px] font-mono"
+                          >
+                            #{t}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
                     {/* Bottom Row: Date/Size on left, Action buttons on right */}
                     <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1.5 border-t border-slate-100">
                       <span>{formatUploadDate(d.addedAt)} • {Math.round(d.sizeBytes / 1024)} KB</span>
 
                       <div className="flex items-center space-x-1.5 shrink-0">
                         <button
+                          onClick={() => handleStartEditDoc(d)}
+                          className="px-2 py-1 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-md text-xs font-semibold cursor-pointer flex items-center space-x-1"
+                          title="Edit custom tags for quick attachment"
+                        >
+                          <Tag className="w-3 h-3 text-slate-500" />
+                          <span>Tags</span>
+                        </button>
+
+                        <button
                           onClick={() => handleExtractFromExistingDoc(d)}
                           disabled={extractingDocId === d.id}
-                          className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-md text-xs font-semibold cursor-pointer flex items-center space-x-1 disabled:opacity-50"
+                          className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-md text-xs font-semibold cursor-pointer flex items-center space-x-1 disabled:opacity-50"
                           title="Extract information from this document"
                         >
                           {extractingDocId === d.id ? (
@@ -464,7 +623,7 @@ export const DocumentsAndProfileView: React.FC<{
 
                         <button
                           onClick={() => handleViewDocument(d)}
-                          className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-md text-xs font-semibold cursor-pointer"
+                          className="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-md text-xs font-semibold cursor-pointer"
                         >
                           View
                         </button>
@@ -674,17 +833,72 @@ export const DocumentsAndProfileView: React.FC<{
             </div>
 
             {uploadQueue.length > 0 && (
-              <div className="space-y-2">
-                <span className="font-bold text-xs text-slate-800">Ready to save ({uploadQueue.length})</span>
+              <div className="space-y-3">
+                <span className="font-bold text-xs text-slate-800 block">
+                  Documents ready to save ({uploadQueue.length})
+                </span>
+
                 {uploadQueue.map((item, idx) => (
-                  <div key={idx} className="p-2.5 bg-white border border-slate-200 rounded-lg flex items-center justify-between text-xs">
-                    <span className="font-medium text-slate-800 truncate max-w-[180px]">{item.file.name}</span>
-                    <button
-                      onClick={() => setUploadQueue((prev) => prev.filter((_, i) => i !== idx))}
-                      className="text-slate-400 hover:text-rose-600"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
+                  <div
+                    key={idx}
+                    className="p-3 bg-white border border-slate-200 rounded-xl space-y-2 text-xs shadow-2xs"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-800 truncate max-w-[200px]" title={item.file.name}>
+                        {item.file.name}
+                      </span>
+                      <button
+                        onClick={() => setUploadQueue((prev) => prev.filter((_, i) => i !== idx))}
+                        className="text-slate-400 hover:text-rose-600 p-1"
+                        title="Remove from queue"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-600 block mb-0.5">
+                          Category Type
+                        </label>
+                        <select
+                          value={item.docType}
+                          onChange={(e) => {
+                            const val = e.target.value as DocumentType;
+                            setUploadQueue((prev) =>
+                              prev.map((it, i) => (i === idx ? { ...it, docType: val } : it))
+                            );
+                          }}
+                          className="w-full px-2 py-1 bg-slate-50 border border-slate-300 rounded text-xs"
+                        >
+                          {Object.entries(FRIENDLY_DOC_TITLES).map(([key, label]) => (
+                            <option key={key} value={key}>{label}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-semibold text-slate-600 block mb-0.5">
+                          QuickAttach Tags
+                        </label>
+                        <input
+                          type="text"
+                          value={item.tagsInput}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setUploadQueue((prev) =>
+                              prev.map((it, i) => (i === idx ? { ...it, tagsInput: val } : it))
+                            );
+                          }}
+                          placeholder="e.g. income, scholarship"
+                          className="w-full px-2 py-1 bg-slate-50 border border-slate-300 rounded text-xs outline-none focus:border-indigo-500"
+                        />
+                      </div>
+                    </div>
+
+                    <p className="text-[10px] text-slate-400">
+                      💡 Tip: Enter words (e.g. <code>income</code>, <code>scholarship</code>) so typing them in QuickAttach instantly attaches this file.
+                    </p>
                   </div>
                 ))}
 
@@ -693,7 +907,7 @@ export const DocumentsAndProfileView: React.FC<{
                   disabled={isProcessingUpload}
                   className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-xs transition cursor-pointer"
                 >
-                  {isProcessingUpload ? 'Saving to device...' : 'Save all to my device'}
+                  {isProcessingUpload ? 'Saving and extracting details...' : 'Save & Extract all to vault'}
                 </button>
               </div>
             )}

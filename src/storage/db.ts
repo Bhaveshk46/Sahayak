@@ -133,6 +133,15 @@ export async function getAllStoredDocuments(): Promise<Array<Omit<StoredDocument
   return docs.map(({ encryptedBlob, ...rest }) => rest);
 }
 
+export async function updateDocumentMetadata(
+  id: string,
+  updates: { name?: string; type?: DocumentType; tags?: string[] }
+): Promise<void> {
+  const doc = await db.documents.get(id);
+  if (!doc) throw new Error('Document not found');
+  await db.documents.update(id, updates);
+}
+
 export async function deleteDocument(id: string): Promise<void> {
   await db.documents.delete(id);
   // Also remove profile entries originated from this document safely

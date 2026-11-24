@@ -69,12 +69,11 @@ export function attachFileToSlot(slotElement: HTMLElement, file: File): AttachRe
 
     const fileInput = findAssociatedFileInput(slotElement);
 
+    // 1. If native input exists, assign files and trigger change events
     if (fileInput) {
-      // Assign files to the native input element
       try {
         fileInput.files = dataTransfer.files;
       } catch {
-        // Fallback descriptor setter for cross-realm / security sandboxes
         const descriptor = Object.getOwnPropertyDescriptor(
           win.HTMLInputElement.prototype,
           'files'
@@ -86,19 +85,11 @@ export function attachFileToSlot(slotElement: HTMLElement, file: File): AttachRe
         }
       }
 
-      // Dispatch native bubbling change and input events
       fileInput.dispatchEvent(new win.Event('input', { bubbles: true, cancelable: true }));
       fileInput.dispatchEvent(new win.Event('change', { bubbles: true, cancelable: true }));
-
-      return {
-        success: true,
-        inputElement: fileInput,
-        fileName: file.name,
-        fileSize: file.size,
-      };
     }
 
-    // Dropzone fallback without native file input
+    // 2. Dispatch synthetic DragEvents (dragenter, dragover, drop) to the slot / dropzone element
     const createDragEvent = (type: string) => {
       const evt = new win.DragEvent(type, {
         bubbles: true,
@@ -120,11 +111,12 @@ export function attachFileToSlot(slotElement: HTMLElement, file: File): AttachRe
 
     slotElement.dispatchEvent(createDragEvent('dragenter'));
     slotElement.dispatchEvent(createDragEvent('dragover'));
-    const dropped = slotElement.dispatchEvent(createDragEvent('drop'));
+    slotElement.dispatchEvent(createDragEvent('drop'));
 
     return {
-      success: dropped,
-      isDropZone: true,
+      success: true,
+      inputElement: fileInput || undefined,
+      isDropZone: !fileInput || slotElement !== fileInput,
       fileName: file.name,
       fileSize: file.size,
     };

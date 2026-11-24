@@ -264,12 +264,15 @@ export class QuickAttachManager {
       });
 
       if (!compressRes.success) {
+        console.warn('[QuickAttach] Compression step-down failed, attaching original file with warning:', compressRes.error);
+        const attachRes = attachFileToSlot(slotElement, originalFile);
         return {
-          success: false,
-          error: compressRes.error,
+          success: attachRes.success,
+          error: attachRes.error,
           wasCompressed: false,
-          originalSize: compressRes.originalSize,
-          compressedSize: compressRes.compressedSize,
+          originalSize: originalFile.size,
+          compressedSize: originalFile.size,
+          warning: compressRes.error ? `Could not compress below limit: ${compressRes.error}. Attached original.` : undefined,
         };
       }
 
