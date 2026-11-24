@@ -20,7 +20,7 @@ export const ProfileRecordSchema = z.object({
   confidence: z.number().min(0).max(1),
   sourceDocId: z.string().optional(),
   sourceDocName: z.string().optional(),
-  source: z.enum(['sarvam', 'regex', 'manual']),
+  source: z.enum(['sarvam', 'regex', 'manual', 'gemini', 'ocr']),
   verifiedByUser: z.boolean().default(false),
   updatedAt: z.number(),
 });

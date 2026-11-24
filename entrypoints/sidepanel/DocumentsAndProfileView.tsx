@@ -9,6 +9,8 @@ import {
   Plus,
   Shield,
   FileCheck,
+  Sparkles,
+  Loader2,
 } from 'lucide-react';
 import {
   isStorageUnlocked,
@@ -26,7 +28,7 @@ import {
   StoredDocument,
 } from '../../src/types/profile';
 import { autoClassifyDocument } from '../../src/extract/classifier';
-import { extractFromTextWithRegex } from '../../src/extract/regex';
+import { extractDocumentData } from '../../src/extract/documentExtractor';
 
 const FRIENDLY_DOC_TITLES: Record<string, string> = {
   aadhaar: 'Aadhaar Card',
@@ -81,6 +83,8 @@ export const DocumentsAndProfileView: React.FC<{
   // Upload queue
   const [uploadQueue, setUploadQueue] = useState<Array<{ file: File; docType: DocumentType }>>([]);
   const [isProcessingUpload, setIsProcessingUpload] = useState<boolean>(false);
+  const [extractingDocId, setExtractingDocId] = useState<string | null>(null);
+  const [statusNotification, setStatusNotification] = useState<string | null>(null);
 
   // Document preview modal
   const [previewDoc, setPreviewDoc] = useState<{
@@ -181,8 +185,10 @@ export const DocumentsAndProfileView: React.FC<{
   const processUploadQueue = async () => {
     if (uploadQueue.length === 0) return;
     setIsProcessingUpload(true);
+    setStatusNotification('Saving and extracting details from documents...');
 
     try {
+      let totalExtracted = 0;
       for (const item of uploadQueue) {
         const docRecord = await saveDocument(
           item.file,
@@ -191,30 +197,83 @@ export const DocumentsAndProfileView: React.FC<{
           [item.docType]
         );
 
-        // Extract regex details offline
-        const extracted = extractFromTextWithRegex(item.file.name);
-        for (const [key, value] of Object.entries(extracted)) {
-          if (value && typeof value === 'string') {
+        // Extract real details from PDF text, BYOK Gemini vision, OCR, and regex
+        const extracted = await extractDocumentData(item.file, item.file.name, item.docType);
+        for (const record of extracted) {
+          if (record.value && typeof record.value === 'string' && record.value.trim()) {
             await saveProfileRecord({
-              key,
-              value,
-              confidence: 0.9,
-              source: 'regex',
+              key: record.key,
+              value: record.value.trim(),
+              confidence: record.confidence,
+              source: record.source,
               sourceDocId: docRecord.id,
               sourceDocName: item.file.name,
               verifiedByUser: false,
             });
+            totalExtracted++;
           }
         }
       }
 
       setUploadQueue([]);
-      setActiveTab('docs');
       await refreshData();
+
+      if (totalExtracted > 0) {
+        setStatusNotification(`✓ Extracted ${totalExtracted} details! Check the Saved Details tab.`);
+        setActiveTab('details');
+      } else {
+        setStatusNotification('✓ Document saved to device vault.');
+        setActiveTab('docs');
+      }
+      setTimeout(() => setStatusNotification(null), 6000);
     } catch (err) {
       alert('Could not save documents: ' + String(err));
     } finally {
       setIsProcessingUpload(false);
+    }
+  };
+
+  const handleExtractFromExistingDoc = async (d: Omit<StoredDocument, 'encryptedBlob'>) => {
+    setExtractingDocId(d.id);
+    setStatusNotification(`Reading and extracting details from "${d.name}"...`);
+
+    try {
+      const blob = await getDocumentDecryptedBlob(d.id);
+      const extracted = await extractDocumentData(blob, d.name, d.type);
+      let count = 0;
+
+      for (const record of extracted) {
+        if (record.value && typeof record.value === 'string' && record.value.trim()) {
+          await saveProfileRecord({
+            key: record.key,
+            value: record.value.trim(),
+            confidence: record.confidence,
+            source: record.source,
+            sourceDocId: d.id,
+            sourceDocName: d.name,
+            verifiedByUser: false,
+          });
+          count++;
+        }
+      }
+
+      await refreshData();
+
+      if (count > 0) {
+        setStatusNotification(`✓ Extracted ${count} details from "${d.name}"!`);
+        setActiveTab('details');
+      } else {
+        alert(
+          `Could not extract standard fields from "${d.name}". You can add details directly using "+ Add Detail" in the Saved Details tab.`
+        );
+        setStatusNotification(null);
+      }
+      setTimeout(() => setStatusNotification(null), 6000);
+    } catch (err) {
+      alert('Extraction failed: ' + String(err));
+      setStatusNotification(null);
+    } finally {
+      setExtractingDocId(null);
     }
   };
 
@@ -264,6 +323,14 @@ export const DocumentsAndProfileView: React.FC<{
           <strong>Safe & Private:</strong> Your files and answers are stored securely on this computer only. Nothing is sent anywhere without your permission.
         </p>
       </div>
+
+      {/* Live Status Notification */}
+      {statusNotification && (
+        <div className="p-2.5 bg-amber-50 border-b border-amber-200 text-amber-900 text-xs font-medium flex items-center space-x-2">
+          <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+          <span>{statusNotification}</span>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex border-b border-slate-200 bg-white px-3 pt-2 text-xs font-semibold">
@@ -322,7 +389,7 @@ export const DocumentsAndProfileView: React.FC<{
                 <div className="space-y-1">
                   <h4 className="font-bold text-sm text-slate-800">No documents saved yet</h4>
                   <p className="text-xs text-slate-500">
-                    Add your certificates or photo so FormPilot can fill and attach them for you.
+                    Add your certificates or photo so Sahayak can fill and attach them for you.
                   </p>
                 </div>
                 <button
@@ -357,6 +424,24 @@ export const DocumentsAndProfileView: React.FC<{
                             ⚠️ Out of date?
                           </span>
                         )}
+                        <button
+                          onClick={() => handleExtractFromExistingDoc(d)}
+                          disabled={extractingDocId === d.id}
+                          className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-md text-xs font-semibold cursor-pointer flex items-center space-x-1 disabled:opacity-50"
+                          title="Extract information from this document"
+                        >
+                          {extractingDocId === d.id ? (
+                            <>
+                              <Loader2 className="w-3 h-3 animate-spin text-amber-600" />
+                              <span>Reading...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="w-3 h-3 text-amber-600" />
+                              <span>Extract</span>
+                            </>
+                          )}
+                        </button>
                         <button
                           onClick={() => handleViewDocument(d)}
                           className="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-md text-xs font-semibold cursor-pointer"
@@ -466,7 +551,12 @@ export const DocumentsAndProfileView: React.FC<{
                     className="p-3 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-1.5"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-xs text-slate-700">{title}</span>
+                      <div className="flex items-center space-x-1.5">
+                        <span className="font-semibold text-xs text-slate-700">{title}</span>
+                        <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-500 font-medium">
+                          {r.source === 'regex' ? 'Text Match' : r.source === 'gemini' ? 'AI Vision' : r.source === 'ocr' ? 'OCR' : r.source}
+                        </span>
+                      </div>
 
                       <div className="flex items-center space-x-1">
                         {sensitive && (

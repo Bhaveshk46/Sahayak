@@ -24,7 +24,7 @@ export function extractFromTextWithRegex(rawText: string): RegexExtractionResult
 
   // 1. Aadhaar Number: 12 digits (with optional spaces or dashes)
   // Formats: 9876 5432 1012, 9876-5432-1012, 987654321012
-  const aadhaarMatch = rawText.match(/\b([2-9]\d{3}[-\s]?\d{4}[-\s]?\d{4})\b/);
+  const aadhaarMatch = rawText.match(/(?:^|[^0-9])([2-9]\d{3}[-\s]?\d{4}[-\s]?\d{4})(?:[^0-9]|$)/);
   if (aadhaarMatch) {
     const cleanAadhaar = aadhaarMatch[1].replace(/[-\s]/g, '');
     if (cleanAadhaar.length === 12) {
@@ -34,7 +34,7 @@ export function extractFromTextWithRegex(rawText: string): RegexExtractionResult
 
   // 2. Permanent Account Number (PAN): 5 letters + 4 digits + 1 letter
   // Format: [A-Z]{5}[0-9]{4}[A-Z]{1}
-  const panMatch = rawText.match(/\b([A-Z]{5}[0-9]{4}[A-Z]{1})\b/);
+  const panMatch = rawText.match(/(?:^|[^A-Z0-9])([A-Z]{5}[0-9]{4}[A-Z]{1})(?:[^A-Z0-9]|$)/);
   if (panMatch) {
     pushResult('panNumber', panMatch[1], 0.95);
   }
@@ -60,7 +60,7 @@ export function extractFromTextWithRegex(rawText: string): RegexExtractionResult
   // 5. Mobile Phone Number: 10-digit Indian numbers starting with 6,7,8,9
   const mobileMatch = rawText.match(
     /(?:Mobile|Phone|Tel|Mo)[\s:/|–-]*(?:(?:\+91|91|0)?[-\s]?)?([6-9]\d{9})\b/i
-  ) || rawText.match(/\b(?:(?:\+91|91|0)?[-\s]?)?([6-9]\d{9})\b/);
+  ) || rawText.match(/(?:^|[^0-9])(?:(?:\+91|91|0)?[-\s]?)?([6-9]\d{9})(?:[^0-9]|$)/);
 
   if (mobileMatch) {
     pushResult('mobile', mobileMatch[1], 0.85);

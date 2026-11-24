@@ -154,7 +154,7 @@ export async function saveProfileRecord(record: {
   confidence: number;
   sourceDocId?: string;
   sourceDocName?: string;
-  source: 'sarvam' | 'regex' | 'manual';
+  source: 'sarvam' | 'regex' | 'manual' | 'gemini' | 'ocr';
   verifiedByUser?: boolean;
 }): Promise<void> {
   if (!activeCryptoKey) throw new Error('Storage is locked. Please unlock first.');
