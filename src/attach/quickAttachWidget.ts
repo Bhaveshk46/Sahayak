@@ -15,6 +15,7 @@ export interface QuickAttachWidgetOptions {
   slotLabel: string;
   slotHint?: string;
   getDocuments: () => DocumentMetadata[];
+  refreshDocuments?: () => Promise<DocumentMetadata[]>;
   onAttachDocument: (
     doc: DocumentMetadata,
     targetLimitBytes?: number | null,
@@ -33,6 +34,7 @@ export class QuickAttachWidget {
   public selectedPresetLimitBytes: number | null = null;
 
   private getDocuments: () => DocumentMetadata[];
+  private refreshDocuments?: () => Promise<DocumentMetadata[]>;
   private onAttachDocument: (
     doc: DocumentMetadata,
     targetLimitBytes?: number | null,
@@ -53,6 +55,7 @@ export class QuickAttachWidget {
     this.slotLabel = options.slotLabel;
     this.slotHint = options.slotHint || '';
     this.getDocuments = options.getDocuments;
+    this.refreshDocuments = options.refreshDocuments;
     this.onAttachDocument = options.onAttachDocument;
     this.onGuidedFallbackNeeded = options.onGuidedFallbackNeeded;
 
@@ -474,7 +477,12 @@ export class QuickAttachWidget {
     });
   }
 
-  public openSuggestions(): void {
+  public async openSuggestions(): Promise<void> {
+    if (this.refreshDocuments) {
+      try {
+        await this.refreshDocuments();
+      } catch {}
+    }
     this.isOpen = true;
     this.renderSuggestions(this.searchInput.value);
     this.suggestionsList.classList.add('open');
@@ -670,7 +678,8 @@ export class QuickAttachWidget {
     ) {
       errDiv.textContent = '🔒 Vault is locked. Open Side Panel to unlock.';
     } else {
-      errDiv.textContent = "Couldn't attach. Click here to choose the file.";
+      errDiv.textContent = `❌ ${errorText || "Couldn't attach"}. Click to choose file.`;
+      errDiv.title = errorText || "Couldn't attach file automatically.";
       errDiv.style.cursor = 'pointer';
       errDiv.addEventListener('click', () => {
         this.slotElement.click();

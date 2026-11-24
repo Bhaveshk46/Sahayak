@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldAlert, RefreshCw } from 'lucide-react';
+import { ShieldAlert } from 'lucide-react';
 
 interface FakeCaptchaProps {
   verified: boolean;

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { CustomDropdown } from '../components/CustomDropdown';
 import { FileDropZone } from '../components/FileDropZone';
 import { FakeCaptcha } from '../components/FakeCaptcha';
-import { ShieldCheck, Send, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { ShieldCheck, Send, CheckCircle2 } from 'lucide-react';
 
 export const KycForm: React.FC = () => {
   const [formData, setFormData] = useState({

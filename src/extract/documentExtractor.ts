@@ -64,20 +64,36 @@ async function blobToBase64(blob: Blob | File): Promise<string> {
   return btoa(binary);
 }
 
+function resolveMimeType(fileOrBlob: Blob | File, fileName?: string): string {
+  if (fileOrBlob.type && fileOrBlob.type !== 'application/octet-stream') {
+    return fileOrBlob.type;
+  }
+  const name = fileName || ('name' in fileOrBlob ? (fileOrBlob as any).name : '') || '';
+  const lower = name.toLowerCase();
+  if (lower.endsWith('.pdf')) return 'application/pdf';
+  if (lower.endsWith('.png')) return 'image/png';
+  if (lower.endsWith('.webp')) return 'image/webp';
+  if (lower.endsWith('.bmp')) return 'image/bmp';
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+  if (lower.endsWith('.txt')) return 'text/plain';
+  return 'application/pdf';
+}
+
 /**
  * Extracts profile fields using Google Gemini Multimodal Vision API (BYOK).
  */
 export async function extractWithGeminiVision(
   fileOrBlob: Blob | File,
   apiKey: string,
-  model: string = 'gemini-2.5-flash'
+  model: string = 'gemini-2.5-flash',
+  fileName?: string
 ): Promise<ExtractedField[]> {
   const results: ExtractedField[] = [];
   if (!apiKey || !apiKey.trim()) return results;
 
   try {
     const base64Data = await blobToBase64(fileOrBlob);
-    const mimeType = fileOrBlob.type || 'image/jpeg';
+    const mimeType = resolveMimeType(fileOrBlob, fileName);
 
     const prompt = `You are a high-accuracy document intelligence parser for identity, educational, and statutory documents (Aadhaar Card, PAN Card, Marksheets, Income Certificates, Bank Passbooks, Caste Certificates).
 Inspect this document and extract all available information.
@@ -138,7 +154,10 @@ Return ONLY valid JSON. If a field is not present or cannot be read with confide
     }
 
     const data = await response.json();
-    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const textPart = data.candidates?.[0]?.content?.parts?.find(
+      (p: any) => typeof p.text === 'string' && !p.thought
+    ) || data.candidates?.[0]?.content?.parts?.[0];
+    const rawText = textPart?.text;
     if (!rawText) return results;
 
     const cleaned = rawText.replace(/```json\s*|```\s*$/g, '').trim();
@@ -146,13 +165,16 @@ Return ONLY valid JSON. If a field is not present or cannot be read with confide
 
     if (parsed && typeof parsed === 'object') {
       for (const [k, v] of Object.entries(parsed)) {
-        if (v && typeof v === 'string' && v.trim()) {
-          results.push({
-            key: k,
-            value: v.trim(),
-            confidence: 0.95,
-            source: 'gemini',
-          });
+        if (v !== null && v !== undefined) {
+          const valStr = typeof v === 'object' ? JSON.stringify(v) : String(v).trim();
+          if (valStr && valStr !== 'null' && valStr !== 'undefined') {
+            results.push({
+              key: k,
+              value: valStr,
+              confidence: 0.95,
+              source: 'gemini',
+            });
+          }
         }
       }
     }
@@ -207,6 +229,13 @@ export async function extractDocumentData(
   } catch {
     // Non-chrome context
   }
+  if (!geminiKey) {
+    try {
+      geminiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || '';
+    } catch {
+      // Non-vite context
+    }
+  }
 
   const isPdf = fileOrBlob.type === 'application/pdf' || fileName.toLowerCase().endsWith('.pdf');
   const isImage = fileOrBlob.type.startsWith('image/') || /\.(jpe?g|png|webp|bmp)$/i.test(fileName);
@@ -215,7 +244,7 @@ export async function extractDocumentData(
   // 2. If Gemini Key is present, attempt Gemini Vision extraction first (super fast and covers all docs)
   if (geminiKey) {
     try {
-      const geminiResults = await extractWithGeminiVision(fileOrBlob, geminiKey);
+      const geminiResults = await extractWithGeminiVision(fileOrBlob, geminiKey, 'gemini-2.5-flash', fileName);
       for (const res of geminiResults) {
         addResult(res);
       }

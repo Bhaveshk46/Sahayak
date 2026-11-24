@@ -22,6 +22,19 @@ export class QuickAttachManager {
     this.scanAndMountWidgets();
     this.setupGlobalListeners();
     this.setupMutationObserver();
+    this.setupExtensionMessageListener();
+  }
+
+  private setupExtensionMessageListener(): void {
+    try {
+      chrome.runtime?.onMessage?.addListener((message: any) => {
+        if (message.type === 'STORAGE_UNLOCKED' || message.type === 'DOCUMENTS_UPDATED') {
+          this.fetchStoredDocumentsMetadata();
+        }
+      });
+    } catch {
+      // Non-extension or test environment
+    }
   }
 
   public setVisible(visible: boolean): void {
@@ -36,16 +49,25 @@ export class QuickAttachManager {
     this.storedDocuments = docs;
   }
 
-  private fetchStoredDocumentsMetadata(): void {
+  public async fetchStoredDocumentsMetadata(): Promise<DocumentMetadata[]> {
     try {
-      chrome.runtime.sendMessage({ type: 'GET_STORED_DOCUMENTS_METADATA' }, (response) => {
-        if (response?.success && Array.isArray(response.documents)) {
-          this.storedDocuments = response.documents;
-        }
+      const response = await new Promise<any>((resolve) => {
+        chrome.runtime.sendMessage({ type: 'GET_STORED_DOCUMENTS_METADATA' }, (res) => {
+          if (chrome.runtime?.lastError) {
+            resolve(null);
+          } else {
+            resolve(res);
+          }
+        });
       });
+      if (response?.success && Array.isArray(response.documents)) {
+        this.storedDocuments = response.documents;
+        return response.documents;
+      }
     } catch {
       // In tests or non-extension environment
     }
+    return this.storedDocuments;
   }
 
   /**
@@ -202,6 +224,7 @@ export class QuickAttachManager {
           slotLabel: label,
           slotHint: hint,
           getDocuments: () => this.storedDocuments,
+          refreshDocuments: () => this.fetchStoredDocumentsMetadata(),
           onAttachDocument: async (doc, targetLimit, onProgress) =>
             this.handleAttachDocument(element, doc, targetLimit, onProgress),
           onGuidedFallbackNeeded: (el, doc) => this.handleGuidedFallback(el, doc),
@@ -241,7 +264,13 @@ export class QuickAttachManager {
             type: 'GET_DECRYPTED_DOCUMENT_FOR_ATTACH',
             payload: { docId: docMeta.id },
           },
-          resolve
+          (res) => {
+            if (chrome.runtime?.lastError) {
+              resolve({ success: false, error: chrome.runtime.lastError.message });
+            } else {
+              resolve(res);
+            }
+          }
         );
       });
 

@@ -3,9 +3,14 @@ import { PDFDocument } from 'pdf-lib';
 import { CompressionResult, canvasToBlob, createRenderingCanvas } from './imageCompressor';
 
 // Configure local bundled pdfjs worker (No CDN; MV3 compliant)
+// Note: In content scripts running on http(s) pages, web workers cannot be spawned from extension URLs.
+// Leaving workerSrc empty in content scripts allows pdfjs-dist to fall back to inline fake-worker.
 if (typeof chrome !== 'undefined' && chrome.runtime?.getURL) {
   try {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('pdf.worker.min.mjs');
+    const isWebOrigin = typeof window !== 'undefined' && window.location && window.location.protocol.startsWith('http');
+    if (!isWebOrigin) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL('pdf.worker.min.mjs');
+    }
   } catch {
     // In test or non-extension environments
   }

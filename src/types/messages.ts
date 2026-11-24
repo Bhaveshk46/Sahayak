@@ -24,6 +24,8 @@ export type ExtensionMessage =
   | { type: 'VERIFY_GEMINI_KEY'; payload: { apiKey: string } }
   | { type: 'UNLOCK_STORAGE'; payload: { passphrase: string } }
   | { type: 'LOCK_STORAGE' }
+  | { type: 'STORAGE_UNLOCKED' }
+  | { type: 'DOCUMENTS_UPDATED' }
   | { type: 'GET_STORED_DOCUMENTS_METADATA' }
   | { type: 'GET_DECRYPTED_DOCUMENT_FOR_ATTACH'; payload: { docId: string } }
   | { type: 'TOGGLE_QUICK_ATTACH'; payload: { visible: boolean } }

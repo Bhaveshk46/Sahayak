@@ -155,6 +155,7 @@ interface UploadQueueItem {
   const handleDeleteDocument = async (id: string, name: string) => {
     if (confirm(`Delete "${name}" from your saved documents?`)) {
       await deleteDocument(id);
+      chrome.runtime.sendMessage({ type: 'DOCUMENTS_UPDATED' }).catch(() => {});
       await refreshData();
     }
   };
@@ -246,6 +247,7 @@ interface UploadQueueItem {
       }
 
       setUploadQueue([]);
+      chrome.runtime.sendMessage({ type: 'DOCUMENTS_UPDATED' }).catch(() => {});
       await refreshData();
 
       if (totalExtracted > 0) {
@@ -288,6 +290,7 @@ interface UploadQueueItem {
       });
 
       setEditingDocId(null);
+      chrome.runtime.sendMessage({ type: 'DOCUMENTS_UPDATED' }).catch(() => {});
       await refreshData();
       setStatusNotification('✓ Document tags updated! QuickAttach will now match these keywords.');
       setTimeout(() => setStatusNotification(null), 5000);
@@ -546,13 +549,13 @@ interface UploadQueueItem {
                     className="p-3 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-2 hover:border-slate-300 transition"
                   >
                     {/* Top Row: Title, Out of date badge, and Delete button */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center space-x-2 min-w-0 flex-wrap gap-y-1">
                         <span className="font-bold text-sm text-slate-900 truncate">{title}</span>
                         {isStale && (
                           <span
-                            className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full text-[10px] font-bold whitespace-nowrap shrink-0"
-                            title="This document may be older than 1 year. Check if your form requires a recent one."
+                            className="inline-flex items-center px-2 py-0.5 bg-amber-100 border border-amber-300 text-amber-900 rounded-full text-[10px] font-bold whitespace-nowrap shrink-0"
+                            title="Statutory schemes require income certificates issued within the current financial year. This document may be older than 1 year."
                           >
                             ⚠️ Out of date?
                           </span>
@@ -561,11 +564,11 @@ interface UploadQueueItem {
 
                       <button
                         onClick={() => handleDeleteDocument(d.id, d.name)}
-                        className="p-1 text-slate-400 hover:text-rose-600 rounded cursor-pointer transition shrink-0 ml-2"
-                        title="Delete document"
-                        aria-label="Delete document"
+                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer transition shrink-0 border border-transparent hover:border-rose-200"
+                        title={`Delete ${d.name}`}
+                        aria-label={`Delete ${d.name}`}
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
 

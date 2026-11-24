@@ -49,59 +49,85 @@ export async function compressFileIfNeeded(
   const isImage = file.type.startsWith('image/') || /\.(jpe?g|png|webp)$/i.test(file.name);
 
   if (isImage) {
-    const res: CompressionResult = await compressImage(file, {
-      maxSizeBytes: targetLimitBytes,
-      isPngOnly: slotDetection.isPngOnly,
-      onProgress: options.onProgress,
-    });
+    try {
+      const res: CompressionResult = await compressImage(file, {
+        maxSizeBytes: targetLimitBytes,
+        isPngOnly: slotDetection.isPngOnly,
+        onProgress: options.onProgress,
+      });
 
-    if (res.success && res.file) {
-      return {
-        success: true,
-        file: res.file,
-        wasCompressed: res.wasCompressed,
-        originalSize: res.originalSize,
-        compressedSize: res.compressedSize,
-        warning: res.warning,
-        detectedLimitKB: slotDetection.maxSizeKB,
-      };
-    } else {
+      if (res.success && res.file) {
+        return {
+          success: true,
+          file: res.file,
+          wasCompressed: res.wasCompressed,
+          originalSize: res.originalSize,
+          compressedSize: res.compressedSize,
+          warning: res.warning,
+          detectedLimitKB: slotDetection.maxSizeKB,
+        };
+      } else {
+        return {
+          success: false,
+          file,
+          wasCompressed: false,
+          originalSize,
+          compressedSize: res.compressedSize,
+          error: res.error || 'Failed to compress image below target limit.',
+          detectedLimitKB: slotDetection.maxSizeKB,
+        };
+      }
+    } catch (err: any) {
+      console.warn('[CompressManager] Image compression error, using original:', err);
       return {
         success: false,
         file,
         wasCompressed: false,
         originalSize,
-        compressedSize: res.compressedSize,
-        error: res.error || 'Failed to compress image below target limit.',
+        compressedSize: originalSize,
+        error: `Compression error: ${err?.message || String(err)}`,
         detectedLimitKB: slotDetection.maxSizeKB,
       };
     }
   }
 
   if (isPdf) {
-    const res: CompressionResult = await compressPdf(file, {
-      maxSizeBytes: targetLimitBytes,
-      onProgress: options.onProgress,
-    });
+    try {
+      const res: CompressionResult = await compressPdf(file, {
+        maxSizeBytes: targetLimitBytes,
+        onProgress: options.onProgress,
+      });
 
-    if (res.success && res.file) {
-      return {
-        success: true,
-        file: res.file,
-        wasCompressed: res.wasCompressed,
-        originalSize: res.originalSize,
-        compressedSize: res.compressedSize,
-        warning: res.warning,
-        detectedLimitKB: slotDetection.maxSizeKB,
-      };
-    } else {
+      if (res.success && res.file) {
+        return {
+          success: true,
+          file: res.file,
+          wasCompressed: res.wasCompressed,
+          originalSize: res.originalSize,
+          compressedSize: res.compressedSize,
+          warning: res.warning,
+          detectedLimitKB: slotDetection.maxSizeKB,
+        };
+      } else {
+        return {
+          success: false,
+          file,
+          wasCompressed: false,
+          originalSize,
+          compressedSize: res.compressedSize,
+          error: res.error || 'Failed to compress PDF below target limit.',
+          detectedLimitKB: slotDetection.maxSizeKB,
+        };
+      }
+    } catch (err: any) {
+      console.warn('[CompressManager] PDF compression error, using original:', err);
       return {
         success: false,
         file,
         wasCompressed: false,
         originalSize,
-        compressedSize: res.compressedSize,
-        error: res.error || 'Failed to compress PDF below target limit.',
+        compressedSize: originalSize,
+        error: `Compression error: ${err?.message || String(err)}`,
         detectedLimitKB: slotDetection.maxSizeKB,
       };
     }

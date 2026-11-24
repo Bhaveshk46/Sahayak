@@ -85,33 +85,52 @@ export function attachFileToSlot(slotElement: HTMLElement, file: File): AttachRe
         }
       }
 
-      fileInput.dispatchEvent(new win.Event('input', { bubbles: true, cancelable: true }));
-      fileInput.dispatchEvent(new win.Event('change', { bubbles: true, cancelable: true }));
+      // Reset React's internal value tracker so synthetic change events fire React component listeners
+      const tracker = (fileInput as any)._valueTracker;
+      if (tracker && typeof tracker.setValue === 'function') {
+        try {
+          tracker.setValue('');
+        } catch {}
+      }
+
+      fileInput.dispatchEvent(new win.Event('input', { bubbles: true, cancelable: true, composed: true }));
+      fileInput.dispatchEvent(new win.Event('change', { bubbles: true, cancelable: true, composed: true }));
     }
 
     // 2. Dispatch synthetic DragEvents (dragenter, dragover, drop) to the slot / dropzone element
-    const createDragEvent = (type: string) => {
-      const evt = new win.DragEvent(type, {
-        bubbles: true,
-        cancelable: true,
-        dataTransfer,
-      });
-      try {
-        Object.defineProperty(evt, 'dataTransfer', {
-          value: dataTransfer,
-          configurable: true,
-          enumerable: true,
-          writable: false,
-        });
-      } catch {
-        // Safe fallback
-      }
-      return evt;
-    };
+    try {
+      const createDragEvent = (type: string) => {
+        let evt: DragEvent;
+        try {
+          evt = new win.DragEvent(type, {
+            bubbles: true,
+            cancelable: true,
+            composed: true,
+            dataTransfer,
+          });
+        } catch {
+          evt = doc.createEvent('DragEvent');
+          evt.initEvent(type, true, true);
+        }
+        try {
+          Object.defineProperty(evt, 'dataTransfer', {
+            value: dataTransfer,
+            configurable: true,
+            enumerable: true,
+            writable: false,
+          });
+        } catch {
+          // Safe fallback
+        }
+        return evt;
+      };
 
-    slotElement.dispatchEvent(createDragEvent('dragenter'));
-    slotElement.dispatchEvent(createDragEvent('dragover'));
-    slotElement.dispatchEvent(createDragEvent('drop'));
+      slotElement.dispatchEvent(createDragEvent('dragenter'));
+      slotElement.dispatchEvent(createDragEvent('dragover'));
+      slotElement.dispatchEvent(createDragEvent('drop'));
+    } catch (dragErr) {
+      console.warn('[FormPilot] DragEvent dispatch error:', dragErr);
+    }
 
     return {
       success: true,

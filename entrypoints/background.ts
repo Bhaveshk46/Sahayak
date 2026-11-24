@@ -526,12 +526,34 @@ export default defineBackground(() => {
             await chrome.storage.session.set({ formpilot_session_pass: message.payload.passphrase });
           }
           const success = await initializeOrUnlockStorage(message.payload.passphrase);
+          // Broadcast to all active tabs that storage is unlocked
+          if (success) {
+            chrome.tabs.query({}).then((tabs) => {
+              tabs.forEach((tab) => {
+                if (tab.id) {
+                  chrome.tabs.sendMessage(tab.id, { type: 'STORAGE_UNLOCKED' } as ExtensionMessage).catch(() => {});
+                }
+              });
+            }).catch(() => {});
+          }
           sendResponse({ success });
         } catch (err: any) {
           sendResponse({ success: false, error: err?.message || 'Unlock failed' });
         }
       })();
       return true;
+    }
+
+    if (message.type === 'DOCUMENTS_UPDATED') {
+      chrome.tabs.query({}).then((tabs) => {
+        tabs.forEach((tab) => {
+          if (tab.id) {
+            chrome.tabs.sendMessage(tab.id, { type: 'DOCUMENTS_UPDATED' } as ExtensionMessage).catch(() => {});
+          }
+        });
+      }).catch(() => {});
+      sendResponse({ success: true });
+      return false;
     }
 
     if (message.type === 'LOCK_STORAGE') {

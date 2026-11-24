@@ -108,11 +108,15 @@ export default function App() {
   const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
   const [showTimeline, setShowTimeline] = useState<boolean>(false);
   const [language, setLanguage] = useState<string>('en');
+  const [apiKeyInput, setApiKeyInput] = useState<string>('');
+  const [apiKeySaved, setApiKeySaved] = useState<boolean>(false);
 
-  // Load language preference
+  // Load language preference and API key
   useEffect(() => {
-    chrome.storage?.local?.get(['formpilot_language'], (res) => {
+    chrome.storage?.local?.get(['formpilot_language', 'geminiApiKey'], (res) => {
       if (res?.formpilot_language) setLanguage(res.formpilot_language);
+      const existing = res?.geminiApiKey || (import.meta as any).env?.VITE_GEMINI_API_KEY || '';
+      if (existing) setApiKeyInput(existing);
     });
   }, []);
 
@@ -138,7 +142,23 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    reloadProfile();
+    (async () => {
+      try {
+        if (!isStorageUnlocked() && chrome.storage?.session) {
+          const sessionData = await chrome.storage.session.get('formpilot_session_pass');
+          if (sessionData?.formpilot_session_pass) {
+            const ok = await initializeOrUnlockStorage(sessionData.formpilot_session_pass);
+            if (ok) {
+              setIsVaultUnlocked(true);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[FormPilot] Failed to restore session on mount:', err);
+      } finally {
+        await reloadProfile();
+      }
+    })();
   }, [reloadProfile]);
 
   const getActiveTab = useCallback(async (): Promise<chrome.tabs.Tab | undefined> => {
@@ -315,6 +335,9 @@ export default function App() {
     try {
       const ok = await initializeOrUnlockStorage(passphraseInput.trim());
       if (ok) {
+        if (chrome.storage?.session) {
+          await chrome.storage.session.set({ formpilot_session_pass: passphraseInput.trim() }).catch(() => {});
+        }
         chrome.runtime.sendMessage({
           type: 'UNLOCK_STORAGE',
           payload: { passphrase: passphraseInput.trim() },
@@ -740,6 +763,40 @@ export default function App() {
               <option value="ta">Tamil (தமிழ்)</option>
               <option value="te">Telugu (తెలుగు)</option>
             </select>
+          </div>
+
+          {/* Gemini AI Key */}
+          <div className="space-y-2 p-3.5 bg-white border border-slate-200 rounded-xl">
+            <div className="flex items-center space-x-1.5 text-xs font-bold text-slate-800">
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              <span>Gemini Vision AI (Document Extraction & Smart Fill)</span>
+            </div>
+            <p className="text-[11px] text-slate-500 leading-relaxed">
+              Powers automatic extraction of details from uploaded Aadhaar, PAN, marksheets, and income certificates. Loaded from <code>.env</code> by default.
+            </p>
+            <div className="flex items-center space-x-2">
+              <input
+                type="password"
+                value={apiKeyInput}
+                onChange={(e) => {
+                  setApiKeyInput(e.target.value);
+                  setApiKeySaved(false);
+                }}
+                placeholder="Gemini API Key..."
+                className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-slate-50 text-slate-800 font-mono outline-none focus:border-indigo-500"
+              />
+              <button
+                onClick={() => {
+                  chrome.storage?.local?.set({ geminiApiKey: apiKeyInput.trim() }, () => {
+                    setApiKeySaved(true);
+                    setTimeout(() => setApiKeySaved(false), 3000);
+                  });
+                }}
+                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition cursor-pointer shrink-0"
+              >
+                {apiKeySaved ? '✓ Saved!' : 'Save Key'}
+              </button>
+            </div>
           </div>
 
           {/* API Setup Information */}

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FileDropZone } from '../components/FileDropZone';
-import { Landmark, CheckCircle2 } from 'lucide-react';
+import { Landmark } from 'lucide-react';
 
 export const IframeEmbeddedForm: React.FC = () => {
   const [bankData, setBankData] = useState({
@@ -10,8 +10,6 @@ export const IframeEmbeddedForm: React.FC = () => {
     accountHolderName: '',
     accountType: 'savings',
   });
-
-  const [saved, setSaved] = useState(false);
 
   return (
     <div className="p-4 bg-slate-50 border border-slate-300 rounded-lg">
