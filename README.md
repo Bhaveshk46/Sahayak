@@ -217,7 +217,3 @@ npm run zip
 Produces: `dist/sahayak-extension-v1.0.0.zip`
 
 ---
-
-## 👥 Contributors & License
-Developed for the **SIH / National Hackathon Initiative**.  
-Licensed under the **MIT License**.
