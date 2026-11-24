@@ -103,7 +103,7 @@ export interface StoredProfileEntry {
   confidence: number;
   sourceDocId?: string;
   sourceDocName?: string;
-  source: 'sarvam' | 'regex' | 'manual';
+  source: 'sarvam' | 'regex' | 'manual' | 'gemini' | 'ocr';
   verifiedByUser: boolean;
   updatedAt: number;
 }
