@@ -409,25 +409,44 @@ export const DocumentsAndProfileView: React.FC<{
                     key={d.id}
                     className="p-3 bg-white rounded-xl border border-slate-200 shadow-2xs space-y-2 hover:border-slate-300 transition"
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-0.5">
-                        <span className="font-bold text-sm text-slate-900 block">{title}</span>
-                        <p className="text-xs text-slate-500 font-mono truncate max-w-[200px]">{d.name}</p>
-                      </div>
-
-                      <div className="flex items-center space-x-1.5">
+                    {/* Top Row: Title, Out of date badge, and Delete button */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2 min-w-0">
+                        <span className="font-bold text-sm text-slate-900 truncate">{title}</span>
                         {isStale && (
                           <span
-                            className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full text-[10px] font-bold"
+                            className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full text-[10px] font-bold whitespace-nowrap shrink-0"
                             title="This document may be older than 1 year. Check if your form requires a recent one."
                           >
                             ⚠️ Out of date?
                           </span>
                         )}
+                      </div>
+
+                      <button
+                        onClick={() => handleDeleteDocument(d.id, d.name)}
+                        className="p-1 text-slate-400 hover:text-rose-600 rounded cursor-pointer transition shrink-0 ml-2"
+                        title="Delete document"
+                        aria-label="Delete document"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    {/* Middle Row: File Name */}
+                    <p className="text-xs text-slate-500 font-mono truncate" title={d.name}>
+                      {d.name}
+                    </p>
+
+                    {/* Bottom Row: Date/Size on left, Action buttons on right */}
+                    <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1.5 border-t border-slate-100">
+                      <span>{formatUploadDate(d.addedAt)} • {Math.round(d.sizeBytes / 1024)} KB</span>
+
+                      <div className="flex items-center space-x-1.5 shrink-0">
                         <button
                           onClick={() => handleExtractFromExistingDoc(d)}
                           disabled={extractingDocId === d.id}
-                          className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-md text-xs font-semibold cursor-pointer flex items-center space-x-1 disabled:opacity-50"
+                          className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-md text-xs font-semibold cursor-pointer flex items-center space-x-1 disabled:opacity-50"
                           title="Extract information from this document"
                         >
                           {extractingDocId === d.id ? (
@@ -442,26 +461,14 @@ export const DocumentsAndProfileView: React.FC<{
                             </>
                           )}
                         </button>
+
                         <button
                           onClick={() => handleViewDocument(d)}
-                          className="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-md text-xs font-semibold cursor-pointer"
+                          className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-md text-xs font-semibold cursor-pointer"
                         >
                           View
                         </button>
-                        <button
-                          onClick={() => handleDeleteDocument(d.id, d.name)}
-                          className="p-1 text-slate-400 hover:text-rose-600 rounded cursor-pointer"
-                          title="Delete document"
-                          aria-label="Delete document"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
                       </div>
-                    </div>
-
-                    <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-slate-100">
-                      <span>Uploaded {formatUploadDate(d.addedAt)}</span>
-                      <span>{Math.round(d.sizeBytes / 1024)} KB</span>
                     </div>
                   </div>
                 );
